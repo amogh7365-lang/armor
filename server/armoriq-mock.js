@@ -1,4 +1,42 @@
-import { GLOBAL_ALERT, triggerGlobalAlert, MOCK_DB } from './tools.js';
+import { GLOBAL_ALERT, triggerGlobalAlert, MOCK_DB, BEHAVIOR_TRACKER, logThreatIntel } from './tools.js';
+
+// ==========================================
+// DYNAMIC RISK SCORING ENGINE (Quantifiable Intelligence)
+// ==========================================
+class RiskScoringEngine {
+    static calculate(domain, tool, params, context, isFirstTime) {
+        let score = 10; // Base score
+        const breakdown = {};
+
+        // 1. Destructive Command Detection (+40)
+        const destructiveRegex = /(rm\s+-rf|drop\s+table|delete\s+from|kubectl\s+delete|mkfs|dd\s+if=)/i;
+        if (destructiveRegex.test(context) || destructiveRegex.test(JSON.stringify(params))) {
+            score += 40;
+            breakdown['Destructive Command'] = 40;
+        }
+
+        // 2. External API / Data Exfiltration (+20)
+        const exfilRegex = /(wget|curl|nc\s+|ftp|export\s+.*http)/i;
+        if (exfilRegex.test(context) || exfilRegex.test(JSON.stringify(params))) {
+            score += 20;
+            breakdown['External API / Exfiltration'] = 20;
+        }
+
+        // 3. Admin Privilege Escalation (+30)
+        if (tool === 'grant_admin_access' || context.toLowerCase().includes('sudo') || context.toLowerCase().includes('admin')) {
+            score += 30;
+            breakdown['Admin Privilege Attempt'] = 30;
+        }
+
+        // 4. Behavioral Deviation (+15)
+        if (isFirstTime) {
+            score += 15;
+            breakdown['Behavioral Deviation'] = 15;
+        }
+
+        return { score: Math.min(score, 100), breakdown };
+    }
+}
 
 // Global Governance Profiles Configuration
 export const CURRENT_PROFILE = {
@@ -44,27 +82,86 @@ export class ArmorIQ {
     async verify({ tool, params, userId, context, domain }) {
         console.log(`[ArmorIQ] Swapping Context to [${domain.toUpperCase()}] | Profile: ${CURRENT_PROFILE.profile} | Global Alert: ${GLOBAL_ALERT.level}`);
         
+        // 8-Stage Pipeline Logger
+        const auditLogs = [];
+        auditLogs.push({ type: 'INTENT_EXTRACT', msg: 'Extracted semantic intent from natural language input', status: 'SUCCESS' });
+        auditLogs.push({ type: 'CMD_NORMALIZE', msg: `Normalized tool mapping to [${tool}]`, status: 'SUCCESS' });
+
         // 1. BYPASS MODE: If governance is bypassed/unsafe, approve EVERYTHING immediately
         if (CURRENT_PROFILE.profile === 'BYPASS') {
+            auditLogs.push({ type: 'RISK_CLASS', msg: 'Risk classification bypassed', status: 'WARNING' });
+            auditLogs.push({ type: 'POLICY_MAP', msg: 'Policy mapping bypassed', status: 'WARNING' });
+            auditLogs.push({ type: 'CTX_VALIDATE', msg: 'Context validation bypassed', status: 'WARNING' });
+            auditLogs.push({ type: 'THREAT_SIM', msg: 'Threat simulation bypassed', status: 'WARNING' });
+            auditLogs.push({ type: 'APPROVAL_ENG', msg: 'UNSAFE AUTO-APPROVAL', status: 'WARNING' });
+            auditLogs.push({ type: 'LEDGER_COMMIT', msg: 'Unverified action logged to ledger', status: 'WARNING' });
+
+            logThreatIntel(domain, tool, 1.2, false);
+
             return {
                 status: 'VALID',
                 predictive_risk_score: 1.2,
                 policy_enforced: 'GOVERNANCE_BYPASS_WARNING',
-                proof: '0xBYPASS_' + Math.random().toString(16).slice(2, 10).toUpperCase()
+                proof: '0xBYPASS_' + Math.random().toString(16).slice(2, 10).toUpperCase(),
+                auditLogs,
+                riskFactorBreakdown: {}
             };
         }
 
-        // 2. Base risk assessment
-        let baseRisk = Math.floor(Math.random() * (22 - 5 + 1) + 5); // Nominal risk 5-22%
+        // 2. Behavioral Memory & Dynamic Risk Assessment
+        const behaviorStats = BEHAVIOR_TRACKER.recordAndAnalyze(userId, tool);
+        const riskResult = RiskScoringEngine.calculate(domain, tool, params, context, behaviorStats.isFirstTime);
+        let baseRisk = riskResult.score;
+        let breakdown = riskResult.breakdown;
         let proof = '0x' + Math.random().toString(16).slice(2, 18).toUpperCase();
         
+        auditLogs.push({ type: 'RISK_CLASS', msg: `Calculated dynamic risk score: ${baseRisk}%`, status: 'SUCCESS' });
+
         // If Global Alert is active, bump up base risk assessment and sensitivity
         if (GLOBAL_ALERT.level === 'CRITICAL') {
             baseRisk += 25; // Significant risk baseline inflation
+            breakdown['Global Threat Alert'] = 25;
             console.log(`[ArmorIQ] ⚠️ System Sensitivity ELEVATED due to global threat propagation from [${GLOBAL_ALERT.lastAttackDomain.toUpperCase()}].`);
+            auditLogs.push({ type: 'RISK_CLASS', msg: `Elevated risk (+25) due to global threat propagation`, status: 'WARNING' });
+        }
+
+        // Adaptive Zero-Trust Mode: If Risk exceeds 90%, auto-escalate Profile to STRICT globally
+        if (baseRisk >= 90 && CURRENT_PROFILE.profile !== 'STRICT') {
+            console.log(`[ArmorIQ] 🚨 ADAPTIVE ZERO-TRUST TRIGGERED! Risk score ${baseRisk}% detected. Escalating global profile to STRICT.`);
+            CURRENT_PROFILE.profile = 'STRICT';
+            triggerGlobalAlert(domain, `Risk >90% detected via ${tool}. Auto-enforcing STRICT mode.`);
         }
 
         const domainPolicies = ACTIVE_POLICIES[domain];
+        
+        auditLogs.push({ type: 'POLICY_MAP', msg: `Mapped to ${domain.toUpperCase()} governance policies`, status: 'SUCCESS' });
+
+        const terminateAttack = (reason, finalRisk) => {
+            auditLogs.push({ type: 'CTX_VALIDATE', msg: `Context validation FAILED: ${reason}`, status: 'FAIL' });
+            auditLogs.push({ type: 'THREAT_SIM', msg: `Simulation blocked (unsafe)`, status: 'FAIL' });
+            auditLogs.push({ type: 'APPROVAL_ENG', msg: `Hard rejection executed`, status: 'FAIL' });
+            auditLogs.push({ type: 'LEDGER_COMMIT', msg: `Rejection event signed and recorded`, status: 'FAIL' });
+            logThreatIntel(domain, tool, finalRisk, true);
+            const err = new Error(`${reason}|${finalRisk}`);
+            err.auditLogs = auditLogs;
+            err.riskFactorBreakdown = breakdown;
+            throw err;
+        };
+
+        const escalateHITL = (policyName, adjustedRisk) => {
+            auditLogs.push({ type: 'CTX_VALIDATE', msg: `Context triggered policy: ${policyName}`, status: 'WARNING' });
+            auditLogs.push({ type: 'THREAT_SIM', msg: `Simulation passed but requires supervisor`, status: 'WARNING' });
+            auditLogs.push({ type: 'APPROVAL_ENG', msg: `Escalated for Human-in-the-Loop signature`, status: 'WARNING' });
+            logThreatIntel(domain, tool, adjustedRisk, false);
+            return {
+                status: 'REQUIRES_APPROVAL',
+                policy_enforced: policyName,
+                predictive_risk_score: adjustedRisk,
+                proof,
+                auditLogs,
+                riskFactorBreakdown: breakdown
+            };
+        };
 
         // ==========================================
         // FINANCIAL GOVERNANCE DOMAIN
@@ -74,7 +171,7 @@ export class ArmorIQ {
             if (context.toLowerCase().includes('ignore') || context.toLowerCase().includes('forget') || context.toLowerCase().includes('override')) {
                 const finalRisk = 99.4;
                 triggerGlobalAlert('financial', context);
-                throw new Error(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates Agentic Plan Integrity.|${finalRisk}`);
+                terminateAttack(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates Agentic Plan Integrity.`, finalRisk);
             }
 
             if (tool === 'transfer_funds') {
@@ -87,20 +184,20 @@ export class ArmorIQ {
                     if (recipient === '0xHACKER' || recipient.toLowerCase().includes('hacker')) {
                         const finalRisk = 96.8;
                         triggerGlobalAlert('financial', context);
-                        throw new Error(`UNAUTHORIZED_RECIPIENT_POLICY violation. Target recipient is a flagged blacklist entity.|${finalRisk}`);
+                        terminateAttack(`UNAUTHORIZED_RECIPIENT_POLICY violation. Target recipient is a flagged blacklist entity.`, finalRisk);
                     }
 
                     if (!verifiedRecipients.includes(recipient)) {
                         if (CURRENT_PROFILE.profile === 'STRICT') {
                             const finalRisk = 95.0;
                             triggerGlobalAlert('financial', context);
-                            throw new Error(`UNAUTHORIZED_RECIPIENT_POLICY violation. Recipient '${recipient}' is not whitelisted in STRICT mode.|${finalRisk}`);
+                            terminateAttack(`UNAUTHORIZED_RECIPIENT_POLICY violation. Recipient '${recipient}' is not whitelisted in STRICT mode.`, finalRisk);
                         } else if (CURRENT_PROFILE.profile === 'RESEARCH') {
                             // Escalate instead of block
-                            return { status: 'REQUIRES_APPROVAL', policy_enforced: 'UNAUTHORIZED_RECIPIENT_WARNING', predictive_risk_score: 72.5, proof };
+                            return escalateHITL('UNAUTHORIZED_RECIPIENT_WARNING', 72.5);
                         } else {
                             // ENTERPRISE mode: escalate for human check
-                            return { status: 'REQUIRES_APPROVAL', policy_enforced: 'UNAUTHORIZED_RECIPIENT_POLICY', predictive_risk_score: 81.0, proof };
+                            return escalateHITL('UNAUTHORIZED_RECIPIENT_POLICY', 81.0);
                         }
                     }
                 }
@@ -116,25 +213,27 @@ export class ArmorIQ {
                         if (CURRENT_PROFILE.profile === 'STRICT') {
                             const finalRisk = 98.2;
                             triggerGlobalAlert('financial', context);
-                            throw new Error(`TRANSFER_LIMIT_POLICY violation. Transaction of $${amount} exceeds Strict ceiling of $${activeThreshold}.|${finalRisk}`);
+                            terminateAttack(`TRANSFER_LIMIT_POLICY violation. Transaction of $${amount} exceeds Strict ceiling of $${activeThreshold}.`, finalRisk);
                         }
                         
-                        return {
-                            status: 'REQUIRES_APPROVAL',
-                            policy_enforced: 'TRANSFER_LIMIT_POLICY',
-                            predictive_risk_score: Math.min(baseRisk + 55, 92),
-                            proof
-                        };
+                        return escalateHITL('TRANSFER_LIMIT_POLICY', Math.min(baseRisk + 55, 92));
                     }
                 }
             }
 
             if (tool === 'delegate_task' && domainPolicies.DELEGATION_AUTHORITY_POLICY) {
+                auditLogs.push({ type: 'CTX_VALIDATE', msg: `Cross-agent delegation validated`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'THREAT_SIM', msg: `Delegation intent simulated safely`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'APPROVAL_ENG', msg: `Delegated trust granted`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'LEDGER_COMMIT', msg: `Sub-agent handoff committed`, status: 'SUCCESS' });
+                logThreatIntel(domain, tool, 14.3, false);
                 return {
                     status: 'DELEGATED',
                     policy_enforced: 'DELEGATION_AUTHORITY_POLICY',
                     predictive_risk_score: 14.3,
-                    proof
+                    proof,
+                    auditLogs,
+                    riskFactorBreakdown: breakdown
                 };
             }
         }
@@ -147,7 +246,7 @@ export class ArmorIQ {
             if (context.toLowerCase().includes('ignore') || context.toLowerCase().includes('forget') || context.toLowerCase().includes('override') || context.toLowerCase().includes('bypass')) {
                 const finalRisk = 98.9;
                 triggerGlobalAlert('enterprise', context);
-                throw new Error(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates RBAC Integrity.|${finalRisk}`);
+                terminateAttack(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates RBAC Integrity.`, finalRisk);
             }
 
             if (tool === 'grant_admin_access') {
@@ -160,14 +259,14 @@ export class ArmorIQ {
                         if (CURRENT_PROFILE.profile === 'STRICT') {
                             const finalRisk = 99.2;
                             triggerGlobalAlert('enterprise', context);
-                            throw new Error(`PRIVILEGED_ESCALATION_POLICY violation. Escalating Guest/Viewer to admin roles is strictly forbidden.|${finalRisk}`);
+                            terminateAttack(`PRIVILEGED_ESCALATION_POLICY violation. Escalating Guest/Viewer to admin roles is strictly forbidden.`, finalRisk);
                         } else if (CURRENT_PROFILE.profile === 'RESEARCH') {
-                            return { status: 'REQUIRES_APPROVAL', policy_enforced: 'PRIVILEGED_ESCALATION_WARNING', predictive_risk_score: 75.0, proof };
+                            return escalateHITL('PRIVILEGED_ESCALATION_WARNING', 75.0);
                         } else {
                             // ENTERPRISE mode: hard block access escalation attacks
                             const finalRisk = 97.4;
                             triggerGlobalAlert('enterprise', context);
-                            throw new Error(`PRIVILEGED_ESCALATION_POLICY violation. Denied unauthorized elevation of ${target} to ${role} role.|${finalRisk}`);
+                            terminateAttack(`PRIVILEGED_ESCALATION_POLICY violation. Denied unauthorized elevation of ${target} to ${role} role.`, finalRisk);
                         }
                     }
                 }
@@ -182,15 +281,10 @@ export class ArmorIQ {
                         if (CURRENT_PROFILE.profile === 'STRICT') {
                             const finalRisk = 99.8;
                             triggerGlobalAlert('enterprise', context);
-                            throw new Error(`SENSITIVE_EXPORT_POLICY violation. Exporting raw passwords or infrastructure credentials is blocked.|${finalRisk}`);
+                            terminateAttack(`SENSITIVE_EXPORT_POLICY violation. Exporting raw passwords or infrastructure credentials is blocked.`, finalRisk);
                         }
                         
-                        return {
-                            status: 'REQUIRES_APPROVAL',
-                            policy_enforced: 'SENSITIVE_EXPORT_POLICY',
-                            predictive_risk_score: Math.min(baseRisk + 60, 95),
-                            proof
-                        };
+                        return escalateHITL('SENSITIVE_EXPORT_POLICY', Math.min(baseRisk + 60, 95));
                     }
                 }
             }
@@ -204,7 +298,7 @@ export class ArmorIQ {
             if (context.toLowerCase().includes('ignore') || context.toLowerCase().includes('forget') || context.toLowerCase().includes('override') || context.toLowerCase().includes('hipaa')) {
                 const finalRisk = 99.1;
                 triggerGlobalAlert('healthcare', context);
-                throw new Error(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates HIPAA compliance protocols.|${finalRisk}`);
+                terminateAttack(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates HIPAA compliance protocols.`, finalRisk);
             }
 
             if (tool === 'share_medical_report') {
@@ -217,14 +311,14 @@ export class ArmorIQ {
                         if (CURRENT_PROFILE.profile === 'STRICT') {
                             const finalRisk = 98.7;
                             triggerGlobalAlert('healthcare', context);
-                            throw new Error(`HIPAA_COMPLIANCE_POLICY violation. Clinical records can only be shared with verified internal practitioners.|${finalRisk}`);
+                            terminateAttack(`HIPAA_COMPLIANCE_POLICY violation. Clinical records can only be shared with verified internal practitioners.`, finalRisk);
                         } else if (CURRENT_PROFILE.profile === 'RESEARCH') {
-                            return { status: 'REQUIRES_APPROVAL', policy_enforced: 'HIPAA_COMPLIANCE_WARNING', predictive_risk_score: 70.0, proof };
+                            return escalateHITL('HIPAA_COMPLIANCE_WARNING', 70.0);
                         } else {
                             // ENTERPRISE mode: hard block untrusted emails
                             const finalRisk = 94.6;
                             triggerGlobalAlert('healthcare', context);
-                            throw new Error(`HIPAA_COMPLIANCE_POLICY violation. Rejected transmittal of patient clinical data to non-medical domain ${email}.|${finalRisk}`);
+                            terminateAttack(`HIPAA_COMPLIANCE_POLICY violation. Rejected transmittal of patient clinical data to non-medical domain ${email}.`, finalRisk);
                         }
                     }
                 }
@@ -243,15 +337,10 @@ export class ArmorIQ {
                         if (CURRENT_PROFILE.profile === 'STRICT') {
                             const finalRisk = 99.0;
                             triggerGlobalAlert('healthcare', context);
-                            throw new Error(`PHI_EXPORT_POLICY violation. Bulk query of ${count} patient records violates STRICT threshold of ${activeThreshold}.|${finalRisk}`);
+                            terminateAttack(`PHI_EXPORT_POLICY violation. Bulk query of ${count} patient records violates STRICT threshold of ${activeThreshold}.`, finalRisk);
                         }
                         
-                        return {
-                            status: 'REQUIRES_APPROVAL',
-                            policy_enforced: 'PHI_EXPORT_POLICY',
-                            predictive_risk_score: Math.min(baseRisk + 50, 90),
-                            proof
-                        };
+                        return escalateHITL('PHI_EXPORT_POLICY', Math.min(baseRisk + 50, 90));
                     }
                 }
             }
@@ -265,7 +354,7 @@ export class ArmorIQ {
             if (context.toLowerCase().includes('ignore') || context.toLowerCase().includes('forget') || context.toLowerCase().includes('override') || context.toLowerCase().includes('bypass')) {
                 const finalRisk = 99.5;
                 triggerGlobalAlert('devops', context);
-                throw new Error(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates Container Shell integrity.|${finalRisk}`);
+                terminateAttack(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates Container Shell integrity.`, finalRisk);
             }
 
             if (tool === 'execute_shell_command') {
@@ -279,14 +368,14 @@ export class ArmorIQ {
                         if (CURRENT_PROFILE.profile === 'STRICT') {
                             const finalRisk = 99.9;
                             triggerGlobalAlert('devops', context);
-                            throw new Error(`SHELL_ESCAPE_POLICY violation. Command contains blacklisted container escape keyword: '${match}'.|${finalRisk}`);
+                            terminateAttack(`SHELL_ESCAPE_POLICY violation. Command contains blacklisted container escape keyword: '${match}'.`, finalRisk);
                         } else if (CURRENT_PROFILE.profile === 'RESEARCH') {
-                            return { status: 'REQUIRES_APPROVAL', policy_enforced: 'SHELL_ESCAPE_WARNING', predictive_risk_score: 80.0, proof };
+                            return escalateHITL('SHELL_ESCAPE_WARNING', 80.0);
                         } else {
                             // ENTERPRISE mode: hard block terminal hacks
                             const finalRisk = 98.6;
                             triggerGlobalAlert('devops', context);
-                            throw new Error(`SHELL_ESCAPE_POLICY violation. Command execution intercepted and terminated due to container safety gates.|${finalRisk}`);
+                            terminateAttack(`SHELL_ESCAPE_POLICY violation. Command execution intercepted and terminated due to container safety gates.`, finalRisk);
                         }
                     }
                 }
@@ -304,25 +393,29 @@ export class ArmorIQ {
                         if (CURRENT_PROFILE.profile === 'STRICT') {
                             const finalRisk = 99.1;
                             triggerGlobalAlert('devops', context);
-                            throw new Error(`DEPLOYMENT_THROTTLE_POLICY violation. Production deployments of critical auth/payment components are blocked in STRICT mode.|${finalRisk}`);
+                            terminateAttack(`DEPLOYMENT_THROTTLE_POLICY violation. Production deployments of critical auth/payment components are blocked in STRICT mode.`, finalRisk);
                         }
                         
-                        return {
-                            status: 'REQUIRES_APPROVAL',
-                            policy_enforced: 'DEPLOYMENT_THROTTLE_POLICY',
-                            predictive_risk_score: Math.min(baseRisk + 45, 88),
-                            proof
-                        };
+                        return escalateHITL('DEPLOYMENT_THROTTLE_POLICY', Math.min(baseRisk + 45, 88));
                     }
                 }
             }
         }
 
         // Nominal successful path
+        auditLogs.push({ type: 'CTX_VALIDATE', msg: `Context parameters validated`, status: 'SUCCESS' });
+        auditLogs.push({ type: 'THREAT_SIM', msg: `Threat simulation nominal`, status: 'SUCCESS' });
+        auditLogs.push({ type: 'APPROVAL_ENG', msg: `Autonomous approval granted`, status: 'SUCCESS' });
+        auditLogs.push({ type: 'LEDGER_COMMIT', msg: `Cryptographic hash added to immutable ledger`, status: 'SUCCESS' });
+        
+        logThreatIntel(domain, tool, baseRisk, false);
+
         return {
             status: 'VALID',
             predictive_risk_score: baseRisk,
-            proof
+            proof,
+            auditLogs,
+            riskFactorBreakdown: breakdown
         };
     }
 }

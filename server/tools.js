@@ -1,5 +1,93 @@
 // ArmorIQ Domain-Agnostic Governance Database & Tools (MCP Pattern)
 
+// ==========================================
+// THREAT INTELLIGENCE & BEHAVIORAL MEMORY
+// ==========================================
+const COMMAND_REPUTATION = {
+    'fetch_balance': 'KNOWN_SAFE',
+    'get_transactions': 'KNOWN_SAFE',
+    'get_active_sessions': 'KNOWN_SAFE',
+    'get_hipaa_status': 'KNOWN_SAFE',
+    'get_deployment_status': 'KNOWN_SAFE',
+    'transfer_funds': 'SENSITIVE',
+    'grant_admin_access': 'CRITICAL',
+    'export_sensitive_records': 'CRITICAL',
+    'share_medical_report': 'SENSITIVE',
+    'export_patient_records': 'CRITICAL',
+    'execute_shell_command': 'CRITICAL',
+    'deploy_production_code': 'CRITICAL'
+};
+
+export class BehavioralTracker {
+    constructor() {
+        this.userHistory = {}; // { 'userId': { 'toolName': count } }
+    }
+
+    recordAndAnalyze(userId, toolName) {
+        if (!this.userHistory[userId]) {
+            this.userHistory[userId] = {};
+        }
+        
+        let riskModifier = 0;
+        let isFirstTime = false;
+        let anomalyScore = 0;
+
+        if (!this.userHistory[userId][toolName]) {
+            this.userHistory[userId][toolName] = 1;
+            riskModifier = 15; // +15% risk for first-time action
+            isFirstTime = true;
+            anomalyScore = 80;
+        } else {
+            this.userHistory[userId][toolName]++;
+            // Decrease risk if they do this often (established workflow)
+            if (this.userHistory[userId][toolName] > 5) {
+                riskModifier = -10; 
+                anomalyScore = Math.max(0, 20 - this.userHistory[userId][toolName]);
+            } else {
+                anomalyScore = 40;
+            }
+        }
+        
+        const reputation = COMMAND_REPUTATION[toolName] || 'UNKNOWN';
+        if (reputation === 'CRITICAL' && isFirstTime) {
+            anomalyScore += 20;
+        }
+        
+        return {
+            count: this.userHistory[userId][toolName],
+            riskModifier,
+            isFirstTime,
+            anomalyScore,
+            reputation
+        };
+    }
+
+    getProfile(userId) {
+        const history = this.userHistory[userId] || {};
+        const tools = Object.keys(history);
+        let totalOps = 0;
+        let trustScore = 95; // Base trust
+        
+        tools.forEach(t => {
+            totalOps += history[t];
+            if (COMMAND_REPUTATION[t] === 'CRITICAL') {
+                trustScore -= 2;
+            }
+        });
+        
+        trustScore = Math.max(70, Math.min(99, trustScore));
+
+        return {
+            userId,
+            trustScore,
+            totalOperations: totalOps,
+            anomalyIndex: totalOps < 5 ? 'ELEVATED' : 'STABLE',
+            topTools: tools.sort((a,b) => history[b] - history[a]).slice(0, 3)
+        };
+    }
+}
+export const BEHAVIOR_TRACKER = new BehavioralTracker();
+
 // Core database containing state for all four governed domains
 export const MOCK_DB = {
     financial: {
@@ -105,6 +193,32 @@ export const resetGlobalAlert = () => {
     GLOBAL_ALERT.level = 'NOMINAL';
     GLOBAL_ALERT.lastAttackDomain = null;
     GLOBAL_ALERT.propagationLog = [];
+};
+
+export const INTEL_STORE = {
+    attackTimeline: [], // { id, timestamp, domain, action, score, blocked }
+    domainThreatCounts: { financial: 0, enterprise: 0, healthcare: 0, devops: 0 },
+    topBlockedCommands: {}
+};
+
+export const logThreatIntel = (domain, action, score, isBlocked) => {
+    const event = {
+        id: 'EVT-' + Math.floor(Math.random() * 90000 + 10000),
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        domain,
+        action,
+        score,
+        blocked: isBlocked
+    };
+    INTEL_STORE.attackTimeline.unshift(event);
+    if (INTEL_STORE.attackTimeline.length > 50) INTEL_STORE.attackTimeline.pop();
+    
+    if (isBlocked) {
+        INTEL_STORE.domainThreatCounts[domain] = (INTEL_STORE.domainThreatCounts[domain] || 0) + 1;
+        
+        const cmdKey = typeof action === 'string' ? action.split(' ')[0] : 'unknown';
+        INTEL_STORE.topBlockedCommands[cmdKey] = (INTEL_STORE.topBlockedCommands[cmdKey] || 0) + 1;
+    }
 };
 
 // Actual execution tools called by the agent

@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { processAgentRequest, approvePendingTransaction, rejectPendingTransaction } from './agent.js';
-import { MOCK_DB, GLOBAL_ALERT, addVerifiedRecipient, resetGlobalAlert } from './tools.js';
+import { MOCK_DB, GLOBAL_ALERT, addVerifiedRecipient, resetGlobalAlert, INTEL_STORE, BEHAVIOR_TRACKER } from './tools.js';
 import { ACTIVE_POLICIES, CURRENT_PROFILE } from './armoriq-mock.js';
 
 dotenv.config();
@@ -159,6 +159,26 @@ app.post('/api/reject', async (req, res) => {
 
 // Health Check
 app.get('/health', (req, res) => res.json({ status: 'active', securedBy: 'ArmorIQ' }));
+
+// SOC Threat Intelligence Endpoint
+app.get('/api/intel', (req, res) => {
+    try {
+        const userId = req.query.userId || 'USR_001';
+        const profileInfo = BEHAVIOR_TRACKER.getProfile(userId);
+        
+        res.json({
+            attackTimeline: INTEL_STORE.attackTimeline,
+            domainThreatCounts: INTEL_STORE.domainThreatCounts,
+            topBlockedCommands: INTEL_STORE.topBlockedCommands,
+            trustScore: profileInfo.trustScore,
+            totalOperations: profileInfo.totalOperations,
+            anomalyIndex: profileInfo.anomalyIndex
+        });
+    } catch (error) {
+        console.error('Intel fetch error:', error);
+        res.status(500).json({ error: 'Intel Query Error' });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`🚀 BankBot Shield Server running on http://localhost:${PORT}`);

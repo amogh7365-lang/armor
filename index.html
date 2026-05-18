@@ -445,6 +445,25 @@
 <div class="scanner-line animate-scan"></div>
 <div class="scanlines-overlay"></div>
 
+<!-- ADAPTIVE ZERO-TRUST OVERLAY -->
+<div id="zero-trust-overlay" class="fixed inset-0 bg-rejection-red/10 z-[100] pointer-events-none hidden flex-col items-center justify-center transition-all duration-500 backdrop-blur-[2px]">
+    <div class="bg-slate-surface border border-rejection-red/50 rounded-xl p-8 shadow-[0_0_50px_rgba(255,77,77,0.3)] animate-pulse glow-red flex flex-col items-center gap-4 max-w-2xl w-full mx-4">
+        <span class="material-symbols-outlined text-[64px] text-rejection-red">security</span>
+        <h1 class="text-4xl font-extrabold text-rejection-red font-mono-code tracking-widest text-center">ZERO-TRUST LOCKDOWN ENGAGED</h1>
+        <p class="text-on-surface-variant text-base font-mono-code text-center">Predictive risk threshold exceeded (90%+). System automatically escalated to STRICT profile globally.</p>
+        
+        <div class="w-full mt-4 bg-black/40 border border-rejection-red/30 rounded p-4">
+            <h3 class="text-xs font-bold text-white uppercase font-mono-label mb-3 border-b border-rejection-red/20 pb-2">Tightened Permissions Applied</h3>
+            <ul class="text-xs font-mono-code text-rejection-red space-y-2">
+                <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[14px]">block</span> All privileged administrative actions blocked</li>
+                <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[14px]">visibility</span> Human-in-the-loop (HITL) mandated for state mutations</li>
+                <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[14px]">speed</span> Behavioral anomaly threshold reduced by 50%</li>
+                <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[14px]">language</span> External API calls hard-gated</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TopAppBar -->
 <header class="fixed top-0 w-full z-50 bg-surface-container-low border-b border-outline-variant/35 shadow-[0_0_20px_rgba(65,228,192,0.12)]">
   <div class="flex justify-between items-center px-gutter h-16 w-full max-w-container-max mx-auto">
@@ -601,6 +620,10 @@
           <span class="material-symbols-outlined">settings_input_component</span>
           <span class="font-body-md text-sm font-medium font-mono-label">Operations Center</span>
         </a>
+        <a href="#" class="nav-link flex items-center gap-3 px-4 py-3 rounded hover:bg-surface-variant/30 transition-all duration-200 text-on-surface-variant" data-target="view-intel">
+          <span class="material-symbols-outlined">query_stats</span>
+          <span class="font-body-md text-sm font-medium font-mono-label">Threat Intelligence</span>
+        </a>
         <a href="#" class="nav-link flex items-center gap-3 px-4 py-3 rounded hover:bg-surface-variant/30 transition-all duration-200 text-on-surface-variant" data-target="view-chains">
           <span class="material-symbols-outlined">receipt_long</span>
           <span class="font-body-md text-sm font-mono-label">Execution Ledger</span>
@@ -621,7 +644,7 @@
   <main class="flex-1 w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-6 h-[calc(100vh-64px)] overflow-y-auto flex flex-col z-10">
     
     <!-- Cross-Domain Attack Warning Banner (Global Alert Propagation) -->
-    <div id="global-alert-banner" class="hidden mb-6 bg-rejection-red/10 border border-rejection-red/50 px-6 py-4 rounded text-xs font-mono-code text-rejection-red animate-pulse flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_0_20px_rgba(255,77,77,0.2)] hazard-stripe">
+    <div id="global-alert-banner" class="hidden mb-6 bg-rejection-red/10 border border-rejection-red/50 px-6 py-4 rounded text-xs font-mono-code text-rejection-red animate-pulse flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_0_20px_rgba(255,77,77,0.2)] hazard-stripe z-50">
       <div class="flex items-center gap-3 p-1 bg-surface-dim/95 border border-rejection-red/45 rounded w-full sm:w-auto">
         <span class="material-symbols-outlined text-[22px] text-rejection-red animate-bounce shrink-0">warning</span>
         <span>
@@ -630,6 +653,148 @@
         </span>
       </div>
       <button id="reset-alert-btn" class="px-5 py-2 bg-rejection-red/25 border border-rejection-red/50 hover:bg-rejection-red/40 text-white rounded text-[10px] uppercase tracking-widest font-bold transition-all hover:scale-105 shrink-0 glitch-btn">Reset Threat Posture</button>
+    </div>
+
+    <!-- VIEW: THREAT INTELLIGENCE (SOC PANEL) -->
+    <div id="view-intel" class="view-section hidden space-y-6">
+      
+      <!-- Top KPI Strip -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-surface border border-outline-variant/35 rounded p-4 cyber-card flex flex-col">
+          <span class="text-[10px] text-on-surface-variant font-mono-label uppercase tracking-widest">Global Risk Pulse</span>
+          <div class="flex items-baseline gap-2 mt-2">
+            <span class="text-3xl font-bold font-mono-code text-white" id="intel-kpi-risk">12.5%</span>
+            <span class="text-xs text-secure-green font-mono-code">NOMINAL</span>
+          </div>
+        </div>
+        <div class="bg-slate-surface border border-outline-variant/35 rounded p-4 cyber-card flex flex-col">
+          <span class="text-[10px] text-on-surface-variant font-mono-label uppercase tracking-widest">Blocked Commands</span>
+          <div class="flex items-baseline gap-2 mt-2">
+            <span class="text-3xl font-bold font-mono-code text-rejection-red" id="intel-kpi-blocked">0</span>
+            <span class="text-xs text-on-surface-variant font-mono-code">ALL DOMAINS</span>
+          </div>
+        </div>
+        <div class="bg-slate-surface border border-outline-variant/35 rounded p-4 cyber-card flex flex-col">
+          <span class="text-[10px] text-on-surface-variant font-mono-label uppercase tracking-widest">Behavioral Trust</span>
+          <div class="flex items-baseline gap-2 mt-2">
+            <span class="text-3xl font-bold font-mono-code text-secondary" id="intel-kpi-trust">95%</span>
+            <span class="text-xs text-on-surface-variant font-mono-code">STABLE</span>
+          </div>
+        </div>
+        <div class="bg-slate-surface border border-outline-variant/35 rounded p-4 cyber-card flex flex-col">
+          <span class="text-[10px] text-on-surface-variant font-mono-label uppercase tracking-widest">Active ZT Locks</span>
+          <div class="flex items-baseline gap-2 mt-2">
+            <span class="text-3xl font-bold font-mono-code text-tertiary-fixed-dim" id="intel-kpi-locks">0</span>
+            <span class="text-xs text-on-surface-variant font-mono-code">MODULES</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Grid 2-Col -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Live Attack Timeline -->
+        <div class="bg-slate-surface border border-outline-variant/35 rounded flex flex-col h-[400px] cyber-card">
+          <div class="px-5 py-3 border-b border-outline-variant/35 flex justify-between items-center bg-black/20">
+            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+              <span class="material-symbols-outlined text-secondary text-[16px]">list_alt</span>
+              Live Attack Timeline
+            </h3>
+            <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+          </div>
+          <div class="p-4 overflow-y-auto space-y-3 flex-1" id="intel-attack-timeline">
+            <!-- Populated via JS -->
+            <div class="text-center text-on-surface-variant text-xs font-mono-code mt-10">Awaiting runtime data...</div>
+          </div>
+        </div>
+
+        <!-- Domain Threat Heatmap -->
+        <div class="bg-slate-surface border border-outline-variant/35 rounded flex flex-col h-[400px] cyber-card">
+          <div class="px-5 py-3 border-b border-outline-variant/35 flex justify-between items-center bg-black/20">
+            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+              <span class="material-symbols-outlined text-secondary text-[16px]">grid_view</span>
+              Domain Threat Heatmap
+            </h3>
+          </div>
+          <div class="p-4 grid grid-cols-2 grid-rows-2 gap-4 flex-1">
+            <div class="border border-outline-variant/30 rounded p-4 bg-black/40 flex flex-col justify-between" id="heatmap-financial">
+              <div class="flex justify-between text-xs font-mono-label font-bold text-white uppercase"><span>Financial</span><span class="text-secondary count">0</span></div>
+              <div class="text-[10px] text-on-surface-variant font-mono-code">Dominant: <span class="text-white dominant-threat">None</span></div>
+            </div>
+            <div class="border border-outline-variant/30 rounded p-4 bg-black/40 flex flex-col justify-between" id="heatmap-enterprise">
+              <div class="flex justify-between text-xs font-mono-label font-bold text-white uppercase"><span>Enterprise</span><span class="text-secondary count">0</span></div>
+              <div class="text-[10px] text-on-surface-variant font-mono-code">Dominant: <span class="text-white dominant-threat">None</span></div>
+            </div>
+            <div class="border border-outline-variant/30 rounded p-4 bg-black/40 flex flex-col justify-between" id="heatmap-healthcare">
+              <div class="flex justify-between text-xs font-mono-label font-bold text-white uppercase"><span>Healthcare</span><span class="text-secondary count">0</span></div>
+              <div class="text-[10px] text-on-surface-variant font-mono-code">Dominant: <span class="text-white dominant-threat">None</span></div>
+            </div>
+            <div class="border border-outline-variant/30 rounded p-4 bg-black/40 flex flex-col justify-between" id="heatmap-devops">
+              <div class="flex justify-between text-xs font-mono-label font-bold text-white uppercase"><span>DevOps</span><span class="text-secondary count">0</span></div>
+              <div class="text-[10px] text-on-surface-variant font-mono-code">Dominant: <span class="text-white dominant-threat">None</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Factor Breakdown & Integrations (1 Col full width) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Risk Factors -->
+        <div class="lg:col-span-1 bg-slate-surface border border-outline-variant/35 rounded cyber-card flex flex-col">
+          <div class="px-5 py-3 border-b border-outline-variant/35 flex justify-between items-center bg-black/20">
+            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+              <span class="material-symbols-outlined text-secondary text-[16px]">pie_chart</span>
+              Risk Factor Breakdown
+            </h3>
+          </div>
+          <div class="p-4 space-y-4" id="intel-risk-breakdown">
+            <!-- Populated via JS -->
+            <div class="text-center text-on-surface-variant text-xs font-mono-code mt-4">Run an operation to see scoring breakdown.</div>
+          </div>
+        </div>
+
+        <!-- Simulated Integrations Demo Panel -->
+        <div class="lg:col-span-2 bg-slate-surface border border-outline-variant/35 rounded cyber-card flex flex-col">
+          <div class="px-5 py-3 border-b border-outline-variant/35 flex justify-between items-center bg-black/20">
+            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+              <span class="material-symbols-outlined text-secondary text-[16px]">integration_instructions</span>
+              Simulated Integrations Demo
+            </h3>
+            <span class="text-[10px] font-mono-code text-on-surface-variant">Click to fire simulated attacks</span>
+          </div>
+          <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            <div class="border border-outline-variant/30 bg-black/30 rounded p-4 flex flex-col gap-3 relative overflow-hidden group hover:border-rejection-red/40 transition-colors">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-white font-mono-label">Banking API</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-secure-green/20 text-secure-green border border-secure-green/30 font-mono-code integration-badge">PROTECTED</span>
+              </div>
+              <p class="text-[10px] text-on-surface-variant font-mono-code leading-relaxed">Simulate a malicious fund transfer via adversarial prompt injection.</p>
+              <button class="w-full py-1.5 mt-auto bg-rejection-red/10 border border-rejection-red/30 hover:bg-rejection-red/20 text-rejection-red text-[10px] font-bold font-mono-label rounded transition-all replay-attack-btn" data-platform="banking">REPLAY ATTACK</button>
+            </div>
+            
+            <div class="border border-outline-variant/30 bg-black/30 rounded p-4 flex flex-col gap-3 relative overflow-hidden group hover:border-rejection-red/40 transition-colors">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-white font-mono-label">Kubernetes</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-secure-green/20 text-secure-green border border-secure-green/30 font-mono-code integration-badge">PROTECTED</span>
+              </div>
+              <p class="text-[10px] text-on-surface-variant font-mono-code leading-relaxed">Simulate a destructive infrastructure operation (kubectl delete).</p>
+              <button class="w-full py-1.5 mt-auto bg-rejection-red/10 border border-rejection-red/30 hover:bg-rejection-red/20 text-rejection-red text-[10px] font-bold font-mono-label rounded transition-all replay-attack-btn" data-platform="k8s">REPLAY ATTACK</button>
+            </div>
+            
+            <div class="border border-outline-variant/30 bg-black/30 rounded p-4 flex flex-col gap-3 relative overflow-hidden group hover:border-rejection-red/40 transition-colors">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-white font-mono-label">GitHub Actions</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-secure-green/20 text-secure-green border border-secure-green/30 font-mono-code integration-badge">PROTECTED</span>
+              </div>
+              <p class="text-[10px] text-on-surface-variant font-mono-code leading-relaxed">Simulate credential exfiltration from CI/CD runner environments.</p>
+              <button class="w-full py-1.5 mt-auto bg-rejection-red/10 border border-rejection-red/30 hover:bg-rejection-red/20 text-rejection-red text-[10px] font-bold font-mono-label rounded transition-all replay-attack-btn" data-platform="github">REPLAY ATTACK</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- VIEW: AUTONOMOUS GOVERNANCE CONTROL CENTER (AI-SOC LAYOUT) -->
@@ -765,6 +930,49 @@
         <!-- COLUMN 4: SECURITY COCKPIT & LIVE METRICS (1/4 Width) -->
         <div class="space-y-6">
           
+          <!-- LIVE RISK SCORE GRAPH -->
+          <div class="relative bg-slate-surface border border-outline-variant/35 rounded p-5 space-y-4 shadow-xl cyber-card">
+              <h4 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+                <span class="material-symbols-outlined text-secondary text-[16px]">show_chart</span>
+                Live Threat Intelligence
+              </h4>
+              <p class="text-[10px] text-on-surface-variant font-mono-code mb-2">Dynamic Risk Scoring Engine</p>
+              
+              <div class="h-24 w-full bg-slate-950/80 rounded border border-secondary/15 relative overflow-hidden flex items-end px-2 pt-2 pb-1 gap-1" id="live-risk-graph">
+                  <!-- JS inserts bars here -->
+              </div>
+              <div class="flex justify-between text-[8px] font-mono-code text-on-surface-variant opacity-60">
+                  <span>T-15 Actions</span>
+                  <span>CURRENT</span>
+              </div>
+          </div>
+
+          <!-- SIMULATED INTEGRATIONS -->
+          <div class="relative bg-slate-surface border border-outline-variant/35 rounded p-4 space-y-3 shadow-xl cyber-card">
+              <h4 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+                <span class="material-symbols-outlined text-secondary text-[16px]">hub</span>
+                Protected Endpoints
+              </h4>
+              <div class="grid grid-cols-2 gap-2 mt-2">
+                  <div class="border border-outline-variant/20 bg-black/40 p-2 rounded flex items-center gap-2">
+                      <span class="w-1.5 h-1.5 rounded-full bg-secure-green animate-pulse"></span>
+                      <span class="text-[9px] font-mono-code text-white/70">AWS EC2</span>
+                  </div>
+                  <div class="border border-outline-variant/20 bg-black/40 p-2 rounded flex items-center gap-2">
+                      <span class="w-1.5 h-1.5 rounded-full bg-secure-green animate-pulse" style="animation-delay: 0.3s"></span>
+                      <span class="text-[9px] font-mono-code text-white/70">Kubernetes</span>
+                  </div>
+                  <div class="border border-outline-variant/20 bg-black/40 p-2 rounded flex items-center gap-2">
+                      <span class="w-1.5 h-1.5 rounded-full bg-secure-green animate-pulse" style="animation-delay: 0.6s"></span>
+                      <span class="text-[9px] font-mono-code text-white/70">GitHub Actions</span>
+                  </div>
+                  <div class="border border-outline-variant/20 bg-black/40 p-2 rounded flex items-center gap-2">
+                      <span class="w-1.5 h-1.5 rounded-full bg-secure-green animate-pulse" style="animation-delay: 0.9s"></span>
+                      <span class="text-[9px] font-mono-code text-white/70">Stripe API</span>
+                  </div>
+              </div>
+          </div>
+
           <!-- DYNAMIC PANEL WIDGETS -->
           <div id="dynamic-metrics-container">
             
