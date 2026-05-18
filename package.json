@@ -1,0 +1,10 @@
+{
+  "name": "armoriq-workspace-root",
+  "version": "1.0.0",
+  "description": "ArmorIQ Root Workspace Command Center",
+  "scripts": {
+    "setup": "npm install && cd server && npm install",
+    "start": "cd server && npm start",
+    "dev": "cd server && npm run dev"
+  }
+}

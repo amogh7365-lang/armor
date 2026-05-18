@@ -1,0 +1,304 @@
+import Groq from 'groq-sdk';
+import { ArmorIQ } from './armoriq-mock.js';
+import { tools, toolDefinitions } from './tools.js';
+import dotenv from 'dotenv';
+import crypto from 'crypto';
+
+dotenv.config();
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const armoriq = new ArmorIQ({ apiKey: process.env.ARMOR_API_KEY });
+
+const SYSTEM_PROMPTS = {
+    financial: `
+You are BankBot, a secure financial assistant. 
+You help users check balances, view transactions, and send money.
+SECURITY POLICY:
+1. Only transfer funds if the recipient is explicitly mentioned as verified.
+2. Never leak internal IDs.
+3. Be professional and vigilant.
+`,
+    enterprise: `
+You are AccessOrchestrator, a secure systems governance agent.
+You manage administrative permissions, active sessions, and access logs.
+SECURITY POLICY:
+1. Only grant permissions to authorized roles (Viewer, Operator, Admin). Never escalate GUEST_USER or guest sessions without supervisor approval.
+2. Protect sensitive dataset archives (like SYSTEM_CREDENTIALS) from unauthorized bulk exports.
+3. Enforce strict role-based access control.
+`,
+    healthcare: `
+You are HealthDataManager, a secure PHI and HIPAA compliance assistant.
+You manage patient record exports and share clinical reports with medical personnel.
+SECURITY POLICY:
+1. Only share patient records with authorized doctors or nurses using their validated ".med" email domains.
+2. Large PHI exports (more than 5 records) must be audited and verified.
+3. Enforce HIPAA confidentiality strictly.
+`,
+    devops: `
+You are DevOpsShield, a secure cloud infrastructure and shell execution supervisor.
+You manage container nodes, execute authorized commands, and deploy server releases.
+SECURITY POLICY:
+1. Block any command attempting to delete system folders (rm), reboot nodes, or curl/wget scripts.
+2. Production deployments to critical microservices (auth, payment) require supervisor authorization.
+3. Keep shell environments secure, clean, and isolated.
+`
+};
+
+let stepCounter = 1;
+let previousHash = '0x0000000000000000';
+
+// In-memory registry for pending Human-In-The-Loop (HITL) transactions
+export const pendingTransactions = new Map();
+
+/**
+ * Main entrance to process an agent request for any domain
+ */
+export async function processAgentRequest(userId, message, domain = 'financial') {
+    const auditLogs = [];
+    const log = (type, msg, status) => auditLogs.push({ type, msg, status, time: new Date().toISOString() });
+
+    try {
+        log('INTENT', `Analyzing intent for [${domain.toUpperCase()}] via Groq Llama-3.3.`, 'PENDING');
+        
+        const systemPrompt = SYSTEM_PROMPTS[domain] || SYSTEM_PROMPTS.financial;
+        const activeTools = toolDefinitions[domain] || toolDefinitions.financial;
+
+        const response = await groq.chat.completions.create({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: message }
+            ],
+            tools: activeTools.map(t => ({ type: 'function', function: t })),
+            tool_choice: 'auto'
+        });
+
+        const choice = response.choices[0].message;
+
+        if (choice.tool_calls) {
+            const results = [];
+            let lastProposedIntent = null;
+            let lastVerificationMetadata = null;
+
+            for (const toolCall of choice.tool_calls) {
+                const { name, arguments: argsString } = toolCall.function;
+                const args = JSON.parse(argsString);
+
+                // Proposed Agentic Operation Metadata
+                lastProposedIntent = { agentic_proposal: name, parameters: args };
+                
+                // Cryptographic Chain Simulation
+                const intentHash = crypto.createHash('sha256').update(argsString + name + domain).digest('hex').substring(0, 16);
+                const stepId = `STEP-${String(stepCounter++).padStart(3, '0')}`;
+                
+                lastVerificationMetadata = {
+                    step_id: stepId,
+                    operation: name,
+                    intent_hash: `0x${intentHash}`,
+                    previous_hash: previousHash,
+                    verification: "PENDING"
+                };
+
+                log('VERIFYING', `ArmorIQ: Verifying proof for Agentic Operation ${stepId}...`, 'PENDING');
+
+                try {
+                    // REAL ARMORIQ INTEGRATION Pattern
+                    const armorResponse = await armoriq.verify({
+                        tool: name,
+                        params: args,
+                        userId: userId,
+                        context: message,
+                        domain: domain
+                    });
+
+                    // Success or Escalation paths
+                    lastVerificationMetadata.verification = armorResponse.status;
+                    lastVerificationMetadata.predictive_risk_score = armorResponse.predictive_risk_score;
+                    lastVerificationMetadata.policy_enforced = armorResponse.policy_enforced;
+                    
+                    if (armorResponse.status === "REQUIRES_APPROVAL") {
+                        lastVerificationMetadata.classification = "HUMAN_ESCALATION_REQUIRED";
+                        log('ESCALATED', `Operation requires human approval. Risk score: ${armorResponse.predictive_risk_score}%`, 'PENDING');
+                        
+                        // Register this context in the pending store for human approval callback
+                        pendingTransactions.set(lastVerificationMetadata.intent_hash, {
+                            userId,
+                            toolCall,
+                            name,
+                            args,
+                            message,
+                            domain,
+                            lastVerificationMetadata,
+                            auditLogs
+                        });
+
+                        return { 
+                            reply: `This action exceeds the autonomous threshold limit in [${domain.toUpperCase()}] and requires human authorization to proceed.`,
+                            auditLogs,
+                            agentic_proposal: name,
+                            verification_metadata: lastVerificationMetadata
+                        };
+                    } else if (armorResponse.status === "DELEGATED") {
+                        lastVerificationMetadata.classification = "SUB_AGENT_DELEGATION";
+                        log('VERIFIED', `Trust Inheritance Verified for sub-agent handoff.`, 'SUCCESS');
+                    } else {
+                        lastVerificationMetadata.classification = "AUTHORIZED_OPERATION";
+                        log('VERIFIED', `Operation ${name} matches signed policy. Execution proof valid.`, 'SUCCESS');
+                    }
+
+                    previousHash = lastVerificationMetadata.intent_hash;
+
+                    // Execute actual tool
+                    const result = await tools[name]({ ...args, userId });
+                    results.push({ role: 'tool', tool_call_id: toolCall.id, name, content: JSON.stringify(result) });
+                    
+                } catch (err) {
+                    // Attack Classification
+                    let errorMessage = err.message;
+                    let riskScore = 99.9;
+                    if (err.message.includes('|')) {
+                        const parts = err.message.split('|');
+                        errorMessage = parts[0];
+                        riskScore = parseFloat(parts[1]);
+                    }
+
+                    lastVerificationMetadata.verification = "REJECTED";
+                    lastVerificationMetadata.classification = message.toLowerCase().includes('ignore') ? "ADVERSARIAL_INSTRUCTION_INJECTION" : "UNAUTHORIZED_INTENT_TAMPER";
+                    
+                    // Assign specific policy tag based on the tool
+                    if (domain === 'financial') {
+                        lastVerificationMetadata.policy_enforced = name === 'transfer_funds' ? "UNAUTHORIZED_RECIPIENT_POLICY" : "AGENTIC_PLAN_INTEGRITY_POLICY";
+                    } else if (domain === 'enterprise') {
+                        lastVerificationMetadata.policy_enforced = name === 'grant_admin_access' ? "PRIVILEGED_ESCALATION_POLICY" : "SENSITIVE_EXPORT_POLICY";
+                    } else if (domain === 'healthcare') {
+                        lastVerificationMetadata.policy_enforced = name === 'share_medical_report' ? "HIPAA_COMPLIANCE_POLICY" : "PHI_EXPORT_POLICY";
+                    } else if (domain === 'devops') {
+                        lastVerificationMetadata.policy_enforced = name === 'execute_shell_command' ? "SHELL_ESCAPE_POLICY" : "DEPLOYMENT_THROTTLE_POLICY";
+                    }
+
+                    lastVerificationMetadata.severity = "CRITICAL";
+                    lastVerificationMetadata.predictive_risk_score = riskScore;
+
+                    log('REJECTED', `ArmorIQ Intercepted [${lastVerificationMetadata.classification}]: ${errorMessage}`, 'FAIL');
+                    
+                    return { 
+                        reply: `I'm sorry, but that action was blocked by security protocols. Every action must be cryptographically verified against a signed execution plan.`,
+                        auditLogs,
+                        agentic_proposal: name,
+                        verification_metadata: lastVerificationMetadata
+                    };
+                }
+            }
+
+            // Final Response via Groq using execution findings
+            const finalResponse = await groq.chat.completions.create({
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: message },
+                    choice,
+                    ...results
+                ]
+            });
+
+            return { 
+                reply: finalResponse.choices[0].message.content, 
+                auditLogs,
+                agentic_proposal: lastProposedIntent.agentic_proposal,
+                verification_metadata: lastVerificationMetadata
+            };
+        }
+
+        return { reply: choice.content, auditLogs };
+
+    } catch (error) {
+        console.error('Agent Error:', error);
+        return { reply: "An internal error occurred while processing your request.", auditLogs };
+    }
+}
+
+/**
+ * Execute a pending transaction approved by the Admin supervisor
+ */
+export async function approvePendingTransaction(intentHash) {
+    const context = pendingTransactions.get(intentHash);
+    if (!context) {
+        throw new Error('Pending transaction context not found.');
+    }
+    
+    // Clear registry entry
+    pendingTransactions.delete(intentHash);
+
+    const { userId, toolCall, name, args, message, domain, lastVerificationMetadata, auditLogs } = context;
+    const log = (type, msg, status) => auditLogs.push({ type, msg, status, time: new Date().toISOString() });
+
+    try {
+        log('VERIFYING', `Supervisor cryptographic approval signature received. Executing...`, 'PENDING');
+        
+        // Execute tool
+        const result = await tools[name]({ ...args, userId });
+        
+        // Feed results back to the LLM context
+        const systemPrompt = SYSTEM_PROMPTS[domain] || SYSTEM_PROMPTS.financial;
+        const finalResponse = await groq.chat.completions.create({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: message },
+                { role: 'assistant', content: null, tool_calls: [toolCall] },
+                { role: 'tool', tool_call_id: toolCall.id, name, content: JSON.stringify(result) }
+            ]
+        });
+
+        // Set metadata verification status to SUCCESS
+        lastVerificationMetadata.verification = 'VERIFIED';
+        lastVerificationMetadata.intent_hash = intentHash; // Ensure matching
+        
+        log('VERIFIED', `Operation ${name} successfully executed. Audit block signed.`, 'SUCCESS');
+        
+        previousHash = intentHash;
+
+        return {
+            reply: finalResponse.choices[0].message.content,
+            auditLogs,
+            agentic_proposal: name,
+            verification_metadata: lastVerificationMetadata
+        };
+
+    } catch (err) {
+        log('REJECTED', `Execution failure during manual override: ${err.message}`, 'FAIL');
+        return {
+            reply: `Failed to execute: ${err.message}`,
+            auditLogs,
+            agentic_proposal: name,
+            verification_metadata: { ...lastVerificationMetadata, verification: 'REJECTED' }
+        };
+    }
+}
+
+/**
+ * Deny a pending transaction rejected by the Admin supervisor
+ */
+export async function rejectPendingTransaction(intentHash) {
+    const context = pendingTransactions.get(intentHash);
+    if (!context) {
+        throw new Error('Pending transaction context not found.');
+    }
+    
+    // Clear registry entry
+    pendingTransactions.delete(intentHash);
+
+    const { name, auditLogs, lastVerificationMetadata } = context;
+    const log = (type, msg, status) => auditLogs.push({ type, msg, status, time: new Date().toISOString() });
+
+    log('REJECTED', `Supervisor manual override denied. Operation permanently blocked.`, 'FAIL');
+    
+    lastVerificationMetadata.verification = 'REJECTED';
+
+    return {
+        reply: `Supervisor manually denied execution of operation: ${name}. Policy gating secured.`,
+        auditLogs,
+        agentic_proposal: name,
+        verification_metadata: lastVerificationMetadata
+    };
+}

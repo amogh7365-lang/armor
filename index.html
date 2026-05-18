@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>ArmorIQ | Autonomous Governance Console</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface": "#e4e2e4",
+            "surface-variant": "#343536",
+            "primary-container": "#080c14",
+            "error": "#ffb4ab",
+            "surface-container-lowest": "#05070a",
+            "tertiary": "#e7bf99",
+            "on-surface-variant": "#c5c6cd",
+            "on-tertiary-fixed": "#2b1701",
+            "tertiary-fixed-dim": "#e7bf99",
+            "tertiary-fixed": "#ffdcbd",
+            "surface-container-highest": "#343536",
+            "on-error": "#690005",
+            "slate-surface": "rgba(13, 20, 35, 0.75)",
+            "on-primary-container": "#74829d",
+            "secondary-fixed": "#5ffbd6",
+            "on-secondary-fixed": "#002019",
+            "on-primary-fixed": "#0d1c32",
+            "on-background": "#e4e2e4",
+            "inverse-primary": "#515f78",
+            "on-secondary-container": "#004d3f",
+            "primary-fixed-dim": "#b9c7e4",
+            "surface-dim": "#070b13",
+            "primary": "#b9c7e4",
+            "tertiary-container": "#281400",
+            "surface": "#070b13",
+            "on-tertiary-fixed-variant": "#5d4124",
+            "secondary-container": "#00c7a5",
+            "on-secondary": "#00382d",
+            "surface-container-low": "#0b101c",
+            "on-primary": "#233148",
+            "on-error-container": "#ffdad6",
+            "error-container": "#93000a",
+            "secondary-fixed-dim": "#38debb",
+            "accent-orange": "#D97D55",
+            "surface-container": "#0e1526",
+            "on-primary-fixed-variant": "#39475f",
+            "surface-bright": "#39393b",
+            "outline": "#8f9097",
+            "inverse-surface": "#e4e2e4",
+            "background": "#070b13",
+            "surface-container-high": "#0f182c",
+            "on-tertiary": "#432b10",
+            "secure-green": "#00E676",
+            "on-tertiary-container": "#9d7b5a",
+            "rejection-red": "#FF4D4D",
+            "secondary": "#41e4c0",
+            "surface-tint": "#b9c7e4",
+            "on-secondary-fixed-variant": "#005142",
+            "outline-variant": "#223555",
+            "primary-fixed": "#d6e3ff",
+            "inverse-on-surface": "#303032"
+          },
+          "borderRadius": {
+            "DEFAULT": "4px",
+            "lg": "6px",
+            "xl": "8px",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "24px",
+            "grid-unit": "8px",
+            "container-max": "1440px",
+            "margin-mobile": "16px",
+            "margin-desktop": "40px"
+          },
+          "fontFamily": {
+            "body-md": ["Inter", "sans-serif"],
+            "mono-label": ["JetBrains Mono", "monospace"],
+            "headline-lg": ["Inter", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "headline-md": ["Inter", "sans-serif"],
+            "display-lg": ["Inter", "sans-serif"],
+            "mono-code": ["JetBrains Mono", "monospace"]
+          },
+          "animation": {
+            "scan": "scan 12s linear infinite",
+            "pulse-glow-teal": "pulse-glow-teal 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            "pulse-glow-red": "pulse-glow-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            "pulse-glow-yellow": "pulse-glow-yellow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            "fade-slide-up": "fade-slide-up 0.5s ease-out forwards",
+            "radar-sweep": "radar-sweep 4s linear infinite"
+          },
+          "keyframes": {
+            "scan": {
+              "0%": { "transform": "translateY(-100%)" },
+              "100%": { "transform": "translateY(100vh)" }
+            },
+            "pulse-glow-teal": {
+              "0%, 100%": { "box-shadow": "0 0 5px rgba(65, 228, 192, 0.2)", "border-color": "rgba(65, 228, 192, 0.2)" },
+              "50%": { "box-shadow": "0 0 20px rgba(65, 228, 192, 0.5)", "border-color": "rgba(65, 228, 192, 0.7)" }
+            },
+            "pulse-glow-red": {
+              "0%, 100%": { "box-shadow": "0 0 5px rgba(255, 77, 77, 0.2)", "border-color": "rgba(255, 77, 77, 0.2)" },
+              "50%": { "box-shadow": "0 0 20px rgba(255, 77, 77, 0.6)", "border-color": "rgba(255, 77, 77, 0.8)" }
+            },
+            "pulse-glow-yellow": {
+              "0%, 100%": { "box-shadow": "0 0 5px rgba(231, 191, 153, 0.2)", "border-color": "rgba(231, 191, 153, 0.2)" },
+              "50%": { "box-shadow": "0 0 20px rgba(231, 191, 153, 0.5)", "border-color": "rgba(231, 191, 153, 0.7)" }
+            },
+            "fade-slide-up": {
+              "0%": { "opacity": "0", "transform": "translateY(15px)" },
+              "100%": { "opacity": "1", "transform": "translateY(0)" }
+            },
+            "radar-sweep": {
+              "0%": { "transform": "rotate(0deg)" },
+              "100%": { "transform": "rotate(360deg)" }
+            }
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    .grid-overlay {
+      background-image: linear-gradient(to right, rgba(65, 228, 192, 0.02) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(65, 228, 192, 0.02) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    
+    /* Cyber Bracket Borders */
+    .cyber-card {
+      position: relative;
+      background: rgba(10, 16, 28, 0.75);
+      border: 1px solid rgba(65, 228, 192, 0.15);
+      box-shadow: 0 0 15px rgba(65, 228, 192, 0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .cyber-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 10px;
+      height: 10px;
+      border-top: 2px solid #41e4c0;
+      border-left: 2px solid #41e4c0;
+      pointer-events: none;
+    }
+    .cyber-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 10px;
+      height: 10px;
+      border-bottom: 2px solid #41e4c0;
+      border-right: 2px solid #41e4c0;
+      pointer-events: none;
+    }
+
+    .cyber-card-red {
+      position: relative;
+      background: rgba(22, 12, 15, 0.85);
+      border: 1px solid rgba(255, 77, 77, 0.35) !important;
+      box-shadow: 0 0 20px rgba(255, 77, 77, 0.15);
+    }
+    .cyber-card-red::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 10px;
+      height: 10px;
+      border-top: 2px solid #ff4d4d;
+      border-left: 2px solid #ff4d4d;
+      pointer-events: none;
+    }
+    .cyber-card-red::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 10px;
+      height: 10px;
+      border-bottom: 2px solid #ff4d4d;
+      border-right: 2px solid #ff4d4d;
+      pointer-events: none;
+    }
+
+    .cyber-card:hover {
+      border-color: rgba(65, 228, 192, 0.35);
+      box-shadow: 0 0 25px rgba(65, 228, 192, 0.1);
+    }
+
+    /* Cyber Glitch Angled Buttons */
+    .glitch-btn {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      clip-path: polygon(0 0, 92% 0, 100% 30%, 100% 100%, 8% 100%, 0 70%);
+      border: 1px solid rgba(65, 228, 192, 0.3);
+    }
+    .glitch-btn:hover {
+      background: #41e4c0;
+      color: #05070a !important;
+      box-shadow: 0 0 18px rgba(65, 228, 192, 0.6);
+      transform: scale(1.02);
+    }
+    .glitch-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Critical Hazard Warnings */
+    .hazard-stripe {
+      background: repeating-linear-gradient(
+        -45deg,
+        rgba(255, 77, 77, 0.15),
+        rgba(255, 77, 77, 0.15) 12px,
+        rgba(0, 0, 0, 0.4) 12px,
+        rgba(0, 0, 0, 0.4) 24px
+      );
+    }
+
+    /* Animated Scanlines */
+    .scanlines-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        rgba(7, 11, 19, 0) 50%, 
+        rgba(0, 0, 0, 0.2) 50%
+      );
+      background-size: 100% 4px;
+      z-index: 99;
+      pointer-events: none;
+      opacity: 0.35;
+    }
+    
+    .scanner-line {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(65, 228, 192, 0.35), transparent);
+      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    /* Rotation classes */
+    .rotate-cw {
+      animation: rotate-cw 25s linear infinite;
+    }
+    .rotate-ccw {
+      animation: rotate-ccw 20s linear infinite;
+    }
+    
+    @keyframes rotate-cw {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes rotate-ccw {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-360deg); }
+    }
+    
+    /* Sparklines smooth stroke transitions */
+    .sparkline-path {
+      transition: d 1.5s ease-in-out;
+    }
+
+    /* ── FLOATING PARTICLES ───────────────────────── */
+    #particle-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.55;
+    }
+
+    /* ── GLITCH TEXT EFFECT ───────────────────────── */
+    .glitch-text {
+      position: relative;
+      display: inline-block;
+    }
+    .glitch-text::before,
+    .glitch-text::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0;
+    }
+    .glitch-text::before {
+      color: #ff4d4d;
+      animation: glitch-1 4s infinite;
+      clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%);
+    }
+    .glitch-text::after {
+      color: #41e4c0;
+      animation: glitch-2 4s infinite;
+      clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+    }
+    @keyframes glitch-1 {
+      0%, 85%, 100% { opacity: 0; transform: translateX(0); }
+      87% { opacity: 0.7; transform: translateX(-3px); }
+      89% { opacity: 0; transform: translateX(3px); }
+      91% { opacity: 0.5; transform: translateX(-2px); }
+    }
+    @keyframes glitch-2 {
+      0%, 88%, 100% { opacity: 0; transform: translateX(0); }
+      90% { opacity: 0.6; transform: translateX(3px); }
+      92% { opacity: 0; transform: translateX(-3px); }
+    }
+
+    /* ── DATA STREAM BARS ─────────────────────────── */
+    .data-stream-bar {
+      height: 2px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, #41e4c0, transparent);
+      background-size: 200% 100%;
+      animation: stream-flow 2.5s ease-in-out infinite;
+    }
+    .data-stream-bar.red {
+      background: linear-gradient(90deg, transparent, #ff4d4d, transparent);
+      background-size: 200% 100%;
+    }
+    .data-stream-bar.yellow {
+      background: linear-gradient(90deg, transparent, #e7bf99, transparent);
+      background-size: 200% 100%;
+    }
+    @keyframes stream-flow {
+      0%   { background-position: -200% 0; opacity: 0.3; }
+      50%  { opacity: 1; }
+      100% { background-position: 200% 0; opacity: 0.3; }
+    }
+
+    /* ── TERMINAL TYPING ──────────────────────────── */
+    .typing-cursor::after {
+      content: '█';
+      color: #41e4c0;
+      animation: blink-cursor 1s step-end infinite;
+      font-size: 0.65em;
+      margin-left: 1px;
+      vertical-align: middle;
+    }
+    @keyframes blink-cursor {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    /* ── ENERGY PULSE RINGS ───────────────────────── */
+    .pulse-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(65, 228, 192, 0.5);
+      animation: pulse-expand 2.5s ease-out infinite;
+      pointer-events: none;
+    }
+    .pulse-ring:nth-child(2) { animation-delay: 0.8s; }
+    .pulse-ring:nth-child(3) { animation-delay: 1.6s; }
+    @keyframes pulse-expand {
+      0%   { transform: scale(0.6); opacity: 0.8; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    /* ── NEON FLICKER ─────────────────────────────── */
+    .neon-flicker {
+      animation: neon-flicker 6s linear infinite;
+    }
+    @keyframes neon-flicker {
+      0%, 95%, 100% { opacity: 1; }
+      96%            { opacity: 0.4; }
+      97%            { opacity: 1; }
+      98%            { opacity: 0.2; }
+      99%            { opacity: 0.9; }
+    }
+
+    /* ── STAGGERED BOOT SEQUENCE ──────────────────── */
+    .boot-item {
+      opacity: 0;
+      animation: boot-in 0.4s ease-out forwards;
+    }
+    .boot-item:nth-child(1) { animation-delay: 0.2s; }
+    .boot-item:nth-child(2) { animation-delay: 0.5s; }
+    .boot-item:nth-child(3) { animation-delay: 0.8s; }
+    .boot-item:nth-child(4) { animation-delay: 1.1s; }
+    @keyframes boot-in {
+      from { opacity: 0; transform: translateX(-12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ── STAT COUNTER GLOW ───────────────────────── */
+    .stat-glow {
+      animation: stat-glow-pulse 3s ease-in-out infinite;
+    }
+    @keyframes stat-glow-pulse {
+      0%, 100% { text-shadow: 0 0 8px rgba(65, 228, 192, 0.4); }
+      50%       { text-shadow: 0 0 20px rgba(65, 228, 192, 0.9), 0 0 40px rgba(65, 228, 192, 0.3); }
+    }
+
+    /* ── MATRIX COLUMN RAIN ──────────────────────── */
+    #matrix-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.04;
+    }
+
+    /* ── CARD HOVER LIFT ─────────────────────────── */
+    .hover-lift {
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(65, 228, 192, 0.15);
+    }
+
+    /* ── SWEEP BEAM (radar comet tail) ───────────── */
+    .radar-beam {
+      transform-origin: 50% 50%;
+      animation: radar-sweep 3s linear infinite;
+    }
+    @keyframes radar-sweep {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-secondary/30 grid-overlay min-h-screen relative overflow-x-hidden">
+<!-- Matrix rain canvas (deepest layer) -->
+<canvas id="matrix-canvas"></canvas>
+<!-- Floating particle field -->
+<canvas id="particle-canvas"></canvas>
+<div class="scanner-line animate-scan"></div>
+<div class="scanlines-overlay"></div>
+
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface-container-low border-b border-outline-variant/35 shadow-[0_0_20px_rgba(65,228,192,0.12)]">
+  <div class="flex justify-between items-center px-gutter h-16 w-full max-w-container-max mx-auto">
+    <div class="flex items-center gap-3">
+      <!-- Rotating Top Logo Widget -->
+      <svg class="w-6 h-6 text-secondary rotate-cw" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="8" stroke-dasharray="18 10"/>
+        <polygon points="50,20 65,55 35,55" fill="currentColor"/>
+      </svg>
+      <h1 class="text-[20px] font-bold text-on-surface tracking-tight font-mono-label">
+        <span class="glitch-text neon-flicker" data-text="ARMOR">ARMOR</span><span class="text-secondary neon-flicker">IQ</span>
+        <span class="text-on-surface-variant font-normal opacity-50 text-[13px] ml-2 hidden sm:inline">| Runtime Operations Control Plane</span>
+      </h1>
+    </div>
+    
+    <!-- Current Governance Context Banners (Command Center Widgets) -->
+    <div class="flex items-center gap-3">
+      <div class="hidden lg:flex items-center gap-2 px-3 py-1 rounded border border-secondary/30 bg-secondary/5 font-mono-label text-[10px] text-secondary uppercase tracking-wider">
+        <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+        <span class="opacity-55">Domain:</span> <span id="top-domain-context">FINANCIAL OPERATIONS</span>
+      </div>
+      <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded border border-tertiary-fixed-dim/30 bg-tertiary-fixed-dim/5 font-mono-label text-[10px] text-tertiary-fixed-dim uppercase tracking-wider">
+        <span class="opacity-55">Posture:</span> <span id="top-profile-context">ENTERPRISE STATE</span>
+      </div>
+      <div id="top-integrity-badge" class="flex items-center gap-2 px-3 py-1 rounded border border-secure-green/30 bg-secure-green/5 font-mono-label text-[10px] text-secure-green uppercase tracking-wider">
+        <span class="w-1.5 h-1.5 rounded-full bg-secure-green animate-pulse"></span>
+        <span class="opacity-55">Integrity:</span> <span id="top-integrity-context">98.7%</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="flex pt-16 min-h-screen">
+  <!-- NavigationDrawer (Desktop) -->
+  <aside class="hidden md:flex flex-col h-[calc(100vh-64px)] w-72 bg-surface-dim border-r border-outline-variant/30 shadow-2xl sticky top-16 shrink-0 relative overflow-hidden">
+    
+    <!-- Cyber Background floating decorations -->
+    <div class="absolute -right-24 top-1/3 w-48 h-48 border border-secondary/5 rounded-full rotate-cw pointer-events-none"></div>
+    <div class="absolute -left-12 bottom-12 w-32 h-32 border border-secondary/5 rounded-full rotate-ccw pointer-events-none"></div>
+
+    <div class="flex flex-col h-full py-grid-unit z-10">
+      <div class="px-6 py-4 mb-4">
+        <p class="font-headline-md text-headline-md text-secondary font-mono-label font-bold tracking-wide">ArmorIQ Console</p>
+        <p class="font-body-md text-on-surface-variant opacity-70">Agentic Security Architecture</p>
+        <p class="font-mono-label text-[10px] text-secondary mt-1 tracking-widest">v4.5.0-SOC</p>
+      </div>
+
+      <!-- Cybersecurity Shield Graphic Visualizer -->
+      <div class="px-6 mb-4">
+        <div class="text-[10px] font-bold text-on-surface-variant uppercase mb-2.5 tracking-widest font-mono-label">Core Defense Shield</div>
+        <div class="relative rounded overflow-hidden border border-secondary/35 group shadow-[0_0_15px_rgba(65,228,192,0.15)] bg-slate-950/80 cyber-card">
+          
+          <!-- Tactical Holographic Inline SVG Shield -->
+          <svg viewBox="0 0 200 120" class="w-full h-24 bg-slate-950/85 relative transition-transform duration-700 group-hover:scale-[1.03]">
+            <!-- Neon cyan glowing filter -->
+            <defs>
+              <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            <!-- Technical grid backdrop -->
+            <g stroke="rgba(65, 228, 192, 0.04)" stroke-width="0.5">
+              <line x1="0" y1="20" x2="200" y2="20" />
+              <line x1="0" y1="40" x2="200" y2="40" />
+              <line x1="0" y1="60" x2="200" y2="60" />
+              <line x1="0" y1="80" x2="200" y2="80" />
+              <line x1="0" y1="100" x2="200" y2="100" />
+              <line x1="40" y1="0" x2="40" y2="120" />
+              <line x1="80" y1="0" x2="80" y2="120" />
+              <line x1="120" y1="0" x2="120" y2="120" />
+              <line x1="160" y1="0" x2="160" y2="120" />
+            </g>
+
+            <!-- Rotating concentric circular HUD elements -->
+            <circle cx="100" cy="60" r="45" fill="none" stroke="rgba(65, 228, 192, 0.15)" stroke-width="1" stroke-dasharray="5 15" class="rotate-cw" style="transform-origin: 100px 60px;" />
+            <circle cx="100" cy="60" r="38" fill="none" stroke="rgba(65, 228, 192, 0.25)" stroke-width="1" stroke-dasharray="40 10 20 10" class="rotate-ccw" style="transform-origin: 100px 60px;" />
+
+            <!-- Outer Hexagonal shield bounding boundary -->
+            <polygon points="100,22 133,40 133,80 100,98 67,80 67,40" fill="none" stroke="rgba(65, 228, 192, 0.25)" stroke-width="1" />
+            <polygon points="100,26 129,42 129,78 100,94 71,78 71,42" fill="none" stroke="rgba(65, 228, 192, 0.45)" stroke-width="1.5" filter="url(#glow-cyan)" class="animate-pulse" />
+
+            <!-- Center Shield Core Emblem -->
+            <path d="M100,38 L116,48 L116,68 Q116,84 100,90 Q84,84 84,68 L84,48 Z" fill="rgba(65, 228, 192, 0.08)" stroke="#41e4c0" stroke-width="2" filter="url(#glow-cyan)" />
+            
+            <!-- Cyber matrix lock symbol inside shield -->
+            <circle cx="100" cy="58" r="8" fill="none" stroke="#41e4c0" stroke-width="1.5" />
+            <path d="M100,50 L100,54 M100,62 L100,66 M92,58 L96,58 M104,58 L108,58" stroke="#41e4c0" stroke-width="1" />
+
+            <!-- Corner tech brackets -->
+            <path d="M 8,8 L 20,8 M 8,8 L 8,20" stroke="rgba(65, 228, 192, 0.35)" stroke-width="1.5" fill="none" />
+            <path d="M 192,8 L 180,8 M 192,8 L 192,20" stroke="rgba(65, 228, 192, 0.35)" stroke-width="1.5" fill="none" />
+            <path d="M 8,112 L 20,112 M 8,112 L 8,100" stroke="rgba(65, 228, 192, 0.35)" stroke-width="1.5" fill="none" />
+            <path d="M 192,112 L 180,112 M 192,112 L 192,100" stroke="rgba(65, 228, 192, 0.35)" stroke-width="1.5" fill="none" />
+
+            <!-- Tactical readouts text -->
+            <text x="12" y="102" fill="rgba(65, 228, 192, 0.65)" font-family="monospace" font-size="6" font-weight="bold">SEC_LEVEL: 0x9F</text>
+            <text x="145" y="102" fill="rgba(65, 228, 192, 0.65)" font-family="monospace" font-size="6" font-weight="bold">SYS_INTEG: 100%</text>
+          </svg>
+
+          <div class="absolute bottom-1.5 left-2.5 flex items-center gap-1.5 text-[8px] font-mono-code text-secondary font-bold uppercase tracking-wider">
+            <span class="w-1 h-1 rounded-full bg-secondary animate-pulse"></span>
+            SHIELD STATE: ACTIVE
+          </div>
+        </div>
+      </div>
+
+      <!-- Governance Stack Layers -->
+      <div class="px-6 mb-6">
+        <div class="text-[10px] font-bold text-on-surface-variant uppercase mb-4 tracking-widest font-mono-label">Active System Modules</div>
+        <div class="p-3 bg-surface-container-low border border-outline-variant/35 rounded space-y-3 shadow-inner relative">
+          <div class="absolute top-0 right-0 w-2 h-2 bg-secondary/50"></div>
+          <div class="flex flex-col gap-1 boot-item">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+              <span class="text-[10px] font-mono-label text-on-surface opacity-80">1. INTENT TRANSLATOR</span>
+              <span class="ml-auto text-[8px] font-mono-code text-secondary">ONLINE</span>
+            </div>
+            <div class="data-stream-bar w-full"></div>
+          </div>
+          <div class="flex flex-col gap-1 boot-item">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-rejection-red animate-pulse"></div>
+              <span class="text-[10px] font-mono-label text-on-surface opacity-80">2. RUNTIME MIDDLEWARE</span>
+              <span class="ml-auto text-[8px] font-mono-code text-rejection-red">ARMED</span>
+            </div>
+            <div class="data-stream-bar red w-full" style="animation-delay:0.4s"></div>
+          </div>
+          <div class="flex flex-col gap-1 boot-item">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-secure-green animate-pulse"></div>
+              <span class="text-[10px] font-mono-label text-on-surface opacity-80">3. CRYPTO-PROOF LEDGER</span>
+              <span class="ml-auto text-[8px] font-mono-code text-secure-green">SYNC</span>
+            </div>
+            <div class="data-stream-bar w-full" style="animation-delay:0.8s"></div>
+          </div>
+          <div class="flex flex-col gap-1 boot-item">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></div>
+              <span class="text-[10px] font-mono-label text-on-surface opacity-80">4. MUTATIVE EXEC SHIELD</span>
+              <span class="ml-auto text-[8px] font-mono-code text-tertiary-fixed-dim">READY</span>
+            </div>
+            <div class="data-stream-bar yellow w-full" style="animation-delay:1.2s"></div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="flex-1 px-4 space-y-1">
+        <a href="#" class="nav-link flex items-center gap-3 px-4 py-3 rounded bg-secondary-container/10 text-secondary border-r-4 border-secondary transition-all duration-200" data-target="view-governance">
+          <span class="material-symbols-outlined">settings_input_component</span>
+          <span class="font-body-md text-sm font-medium font-mono-label">Operations Center</span>
+        </a>
+        <a href="#" class="nav-link flex items-center gap-3 px-4 py-3 rounded hover:bg-surface-variant/30 transition-all duration-200 text-on-surface-variant" data-target="view-chains">
+          <span class="material-symbols-outlined">receipt_long</span>
+          <span class="font-body-md text-sm font-mono-label">Execution Ledger</span>
+        </a>
+        <a href="#" class="nav-link flex items-center gap-3 px-4 py-3 rounded hover:bg-surface-variant/30 transition-all duration-200 text-on-surface-variant" data-target="view-policies">
+          <span class="material-symbols-outlined">rule_settings</span>
+          <span class="font-body-md text-sm font-mono-label">Policy Configurations</span>
+        </a>
+      </nav>
+      
+      <div class="mt-auto px-6 py-6 border-t border-outline-variant/10">
+        <p id="sidebar-terminal" class="text-[10px] text-secondary leading-relaxed border-l-2 border-secondary/50 pl-3 font-mono-code typing-cursor"></p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Canvas -->
+  <main class="flex-1 w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-6 h-[calc(100vh-64px)] overflow-y-auto flex flex-col z-10">
+    
+    <!-- Cross-Domain Attack Warning Banner (Global Alert Propagation) -->
+    <div id="global-alert-banner" class="hidden mb-6 bg-rejection-red/10 border border-rejection-red/50 px-6 py-4 rounded text-xs font-mono-code text-rejection-red animate-pulse flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_0_20px_rgba(255,77,77,0.2)] hazard-stripe">
+      <div class="flex items-center gap-3 p-1 bg-surface-dim/95 border border-rejection-red/45 rounded w-full sm:w-auto">
+        <span class="material-symbols-outlined text-[22px] text-rejection-red animate-bounce shrink-0">warning</span>
+        <span>
+          <strong class="uppercase font-bold text-white tracking-wide">Intrusion Alert Intercepted:</strong> 
+          Adversarial shell injection blocked in <span id="alert-origin-domain" class="font-bold underline text-secondary">FINANCIAL OPERATIONS</span>. Vulnerability threat propagated globally. Posts updated to <strong class="text-white">ZERO-TRUST MAXIMUM</strong>.
+        </span>
+      </div>
+      <button id="reset-alert-btn" class="px-5 py-2 bg-rejection-red/25 border border-rejection-red/50 hover:bg-rejection-red/40 text-white rounded text-[10px] uppercase tracking-widest font-bold transition-all hover:scale-105 shrink-0 glitch-btn">Reset Threat Posture</button>
+    </div>
+
+    <!-- VIEW: AUTONOMOUS GOVERNANCE CONTROL CENTER (AI-SOC LAYOUT) -->
+    <div id="view-governance" class="view-section space-y-6">
+      
+      <!-- Dynamic Domains selector Header Tabs -->
+      <section class="border-b border-outline-variant/30 pb-1">
+        <div class="flex flex-wrap gap-2">
+          <button class="domain-tab-btn flex items-center gap-2 px-5 py-3 border-b-2 border-secondary text-secondary font-bold text-sm tracking-wide transition-all font-mono-label" data-domain="financial">
+            <span class="material-symbols-outlined text-[18px]">account_balance</span>
+            Financial Operations
+          </button>
+          <button class="domain-tab-btn flex items-center gap-2 px-5 py-3 border-b-2 border-transparent text-on-surface-variant hover:text-white font-medium text-sm tracking-wide transition-all font-mono-label" data-domain="enterprise">
+            <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+            Enterprise Access
+          </button>
+          <button class="domain-tab-btn flex items-center gap-2 px-5 py-3 border-b-2 border-transparent text-on-surface-variant hover:text-white font-medium text-sm tracking-wide transition-all font-mono-label" data-domain="healthcare">
+            <span class="material-symbols-outlined text-[18px]">clinical_notes</span>
+            Sensitive EHR HIPAA
+          </button>
+          <button class="domain-tab-btn flex items-center gap-2 px-5 py-3 border-b-2 border-transparent text-on-surface-variant hover:text-white font-medium text-sm tracking-wide transition-all font-mono-label" data-domain="devops">
+            <span class="material-symbols-outlined text-[18px]">terminal</span>
+            DevOps & Cloud Security
+          </button>
+        </div>
+      </section>
+
+      <!-- 3-COLUMN SOC WORKSPACE -->
+      <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
+        
+        <!-- COLUMN 1: OPERATION PROPOSER (1/4 Width) -->
+        <div class="space-y-6">
+          
+          <!-- HOLOGRAPHIC CYBER-RADAR WIDGET -->
+          <div class="relative bg-slate-surface border border-outline-variant/35 rounded p-5 shadow-xl overflow-hidden flex flex-col items-center justify-center min-h-[175px] group cyber-card hover-lift">
+            <!-- Energy pulse rings behind radar -->
+            <div class="pulse-ring w-20 h-20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+            <div class="pulse-ring w-20 h-20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+            <div class="pulse-ring w-20 h-20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+            <!-- Vector rotating Sweeper Radar -->
+            <svg class="w-32 h-32 text-secondary opacity-75 drop-shadow-[0_0_12px_rgba(65,228,192,0.45)]" viewBox="0 0 100 100">
+              <!-- Outer Dashed Ring -->
+              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="0.75" stroke-dasharray="3 5" class="rotate-cw origin-center" />
+              <!-- Crosshair Lines -->
+              <line x1="50" y1="5" x2="50" y2="95" stroke="currentColor" stroke-width="0.3" opacity="0.4" />
+              <line x1="5" y1="50" x2="95" y2="50" stroke="currentColor" stroke-width="0.3" opacity="0.4" />
+              <!-- Inner rings -->
+              <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="0.5" />
+              <circle cx="50" cy="50" r="16" fill="none" stroke="currentColor" stroke-width="0.5" stroke-dasharray="8 4" class="rotate-ccw origin-center" />
+              <!-- Sweeper Vector beam -->
+              <line x1="50" y1="50" x2="82" y2="18" stroke="currentColor" stroke-width="1.5" class="rotate-cw origin-center" />
+              <!-- Active status blips -->
+              <circle cx="72" cy="28" r="3" fill="#FF4D4D" class="animate-ping origin-center" />
+              <circle cx="72" cy="28" r="1.5" fill="#FF4D4D" />
+              <circle cx="32" cy="68" r="1.5" fill="#00E676" />
+              <circle cx="48" cy="20" r="1" fill="#41e4c0" />
+            </svg>
+            <span class="mt-3 text-[10px] font-mono-label text-secondary tracking-widest uppercase font-bold">ACTIVE SCAN RADAR</span>
+          </div>
+
+          <div class="relative bg-slate-surface border border-outline-variant/35 rounded p-5 space-y-4 shadow-xl cyber-card">
+            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+              <span class="material-symbols-outlined text-secondary text-[16px]">touch_app</span>
+              Propose Action
+            </h3>
+            <p class="text-[11px] text-on-surface-variant leading-relaxed">
+              Trigger pre-configured autonomous agent operations to test governance middleware policies and intrusion alerts.
+            </p>
+            
+            <!-- Dynamic Template Button Drawer -->
+            <div id="demo-buttons-container" class="flex flex-col gap-3">
+              <!-- Swapped dynamically in app.js -->
+            </div>
+          </div>
+
+          <!-- CLI Propose command Console -->
+          <div class="relative bg-slate-surface border border-outline-variant/35 rounded p-5 space-y-3 shadow-xl cyber-card">
+            <h3 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+              <span class="material-symbols-outlined text-secondary text-[16px]">keyboard</span>
+              CLI Proposer
+            </h3>
+            <p class="text-[11px] text-on-surface-variant">Propose a raw natural language transaction sequence for real-time security verification.</p>
+            
+            <form id="chat-form" class="space-y-2.5">
+              <textarea id="chat-input" rows="3" class="w-full bg-surface-dim border border-outline-variant/40 rounded p-3 text-xs text-on-surface focus:outline-none focus:border-secondary transition-colors font-mono-code placeholder:opacity-40 leading-relaxed" placeholder="PROPOSE COMMAND EXECUTION... e.g. Transfer $5,000 to SAVINGS_ACC" required></textarea>
+              <button type="submit" class="w-full py-2.5 bg-secondary text-surface-dim font-bold rounded text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 font-mono-label glitch-btn">
+                <span>SUBMIT PROPOSAL</span>
+                <span class="material-symbols-outlined text-[16px]">send</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- COLUMN 2 & 3: RUNTIME GOVERNANCE BOARD (2/4 Width) -->
+        <div class="xl:col-span-2 space-y-6">
+          <!-- Structured Audit Board -->
+          <section class="bg-slate-surface border border-outline-variant/35 rounded overflow-hidden shadow-2xl flex flex-col relative">
+            <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-secondary"></div>
+            <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-secondary"></div>
+            
+            <!-- Header bar -->
+            <div class="bg-surface-container-low px-5 py-3 border-b border-outline-variant/35 flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-secondary text-[16px]">settings_input_component</span>
+                <span class="font-mono-label text-secondary text-xs font-bold tracking-widest uppercase">Governance Analysis Stream</span>
+              </div>
+              <span class="w-2.5 h-2.5 rounded-full bg-secure-green animate-pulse"></span>
+            </div>
+            
+            <!-- Scrolling Operation Cards Grid -->
+            <div id="chat-messages" class="p-6 space-y-6 max-h-[660px] overflow-y-auto bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] divide-y divide-outline-variant/10">
+              
+              <!-- Initialization System Log Card -->
+              <div class="bg-slate-surface border border-secondary/35 rounded p-5 relative overflow-hidden glow-teal space-y-4 animate-fade-slide-up cyber-card">
+                <div class="flex justify-between items-center border-b border-outline-variant/15 pb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[18px]">verified_user</span>
+                    <span class="font-mono-code font-bold text-xs text-white">SYS-INIT</span>
+                  </div>
+                  <span class="px-2.5 py-0.5 bg-secondary/10 border border-secondary/30 text-secondary text-[9px] font-mono-code font-bold uppercase rounded">GATED SECURITY ACTIVE</span>
+                </div>
+                <div class="text-xs font-mono-code leading-relaxed text-on-surface/90 space-y-2">
+                  <p class="font-semibold text-white">🔥 Governance Engine Initialized</p>
+                  <p class="text-on-surface-variant opacity-80">ArmorIQ supervisor middleware successfully mounted to all runtime containers.</p>
+                  <p class="text-[10px] text-on-surface-variant opacity-50">Llama-3.3-70b-versatile reasoning models online.</p>
+                </div>
+              </div>
+
+            </div>
+          </section>
+        </div>
+
+        <!-- COLUMN 4: SECURITY COCKPIT & LIVE METRICS (1/4 Width) -->
+        <div class="space-y-6">
+          
+          <!-- DYNAMIC PANEL WIDGETS -->
+          <div id="dynamic-metrics-container">
+            
+            <!-- FINANCIAL STATE METRICS -->
+            <div id="panel-financial" class="domain-panel space-y-6">
+              <div class="relative bg-gradient-to-br from-slate-950 via-surface-container-high to-primary-container p-5 rounded border border-secondary/35 shadow-[0_0_20px_rgba(65,228,192,0.12)] overflow-hidden group cyber-card">
+                <div class="flex justify-between items-start mb-6">
+                  <span class="material-symbols-outlined text-secondary text-2xl">credit_card</span>
+                  <span class="font-mono-label text-[9px] text-secondary border border-secondary/40 px-2 py-0.5 rounded tracking-widest uppercase">LIQUID VALUE</span>
+                </div>
+                <div class="space-y-1">
+                  <span class="text-[10px] text-on-surface-variant opacity-60 tracking-wider uppercase font-mono-label">Secured card Balance</span>
+                  <h3 id="bank-balance" class="text-3xl font-bold font-mono-code text-white drop-shadow-[0_0_10px_rgba(0,230,118,0.25)]">$12,840.50</h3>
+                </div>
+                
+                <!-- Live SVG Sparkline Chart -->
+                <div class="h-12 w-full mt-5 overflow-hidden bg-slate-950/70 rounded border border-outline-variant/10 relative">
+                  <svg class="w-full h-full text-secure-green opacity-90" viewBox="0 0 100 30" preserveAspectRatio="none">
+                    <path id="financial-sparkline-path" class="sparkline-path" d="M 0,25 Q 15,10 30,20 Q 50,5 70,25 Q 85,15 100,10" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                  <div class="absolute top-1 left-2 text-[8px] font-mono-label text-on-surface-variant opacity-60 uppercase">OPERATIONAL FREQUENCY</div>
+                </div>
+
+                <div class="mt-4 flex justify-between items-center border-t border-white/5 pt-3 text-[10px] font-mono-code text-on-surface-variant opacity-75">
+                  <span>ID: USR_001</span>
+                  <span>STATUS: NOMINAL</span>
+                </div>
+              </div>
+
+              <!-- Whitelist Tags -->
+              <div class="relative bg-slate-surface border border-outline-variant/35 rounded p-5 space-y-4 shadow-xl cyber-card">
+                <h4 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+                  <span class="material-symbols-outlined text-secondary text-[16px]">verified</span>
+                  Verified Recipients Whitelist
+                </h4>
+                <p class="text-[10px] text-on-surface-variant leading-relaxed font-mono-code">Fund transfers are restricted to whitelisted identifiers.</p>
+                <div id="financial-tags" class="flex flex-wrap gap-1.5 py-1"></div>
+                <form id="whitelist-financial-form" class="flex gap-2">
+                  <input type="text" id="whitelist-financial-input" class="flex-1 bg-surface-dim border border-outline-variant/40 rounded px-2.5 py-1.5 text-xs text-on-surface font-mono-code placeholder:opacity-40" placeholder="e.g. SISTER_ACC" required/>
+                  <button type="submit" class="px-4 py-1.5 bg-secondary/15 border border-secondary/35 text-secondary hover:bg-secondary/25 text-xs font-bold rounded transition-colors shrink-0 font-mono-label glitch-btn">ADD</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- ENTERPRISE STATE METRICS -->
+            <div id="panel-enterprise" class="domain-panel hidden space-y-6">
+              <div class="relative bg-gradient-to-br from-slate-950 via-surface-container-high to-surface-dim p-5 rounded border border-secondary/35 shadow-[0_0_20px_rgba(65,228,192,0.12)] overflow-hidden group cyber-card">
+                <div class="flex justify-between items-start mb-6">
+                  <span class="material-symbols-outlined text-secondary text-2xl">security</span>
+                  <span class="font-mono-label text-[9px] text-secondary border border-secondary/40 px-2 py-0.5 rounded tracking-widest uppercase">RBAC CONTROLLER</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="text-[9px] text-on-surface-variant opacity-60 tracking-wider uppercase font-mono-label">Active sessions</span>
+                    <h3 id="sessions-count" class="text-2xl font-bold font-mono-code text-white">3</h3>
+                  </div>
+                  <div class="space-y-1">
+                    <span class="text-[9px] text-on-surface-variant opacity-60 tracking-wider uppercase font-mono-label">System roles</span>
+                    <h3 class="text-2xl font-bold font-mono-code text-white">3 Active</h3>
+                  </div>
+                </div>
+                
+                <!-- Live SVG Sparkline Chart -->
+                <div class="h-12 w-full mt-5 overflow-hidden bg-slate-950/70 rounded border border-outline-variant/10 relative">
+                  <svg class="w-full h-full text-secondary opacity-90" viewBox="0 0 100 30" preserveAspectRatio="none">
+                    <path id="enterprise-sparkline-path" class="sparkline-path" d="M 0,15 Q 20,5 40,25 Q 60,15 80,5 Q 90,20 100,10" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                  <div class="absolute top-1 left-2 text-[8px] font-mono-label text-on-surface-variant opacity-60 uppercase">ACTIVE POLICY BANDWIDTH</div>
+                </div>
+
+                <div class="mt-4 flex justify-between items-center border-t border-white/5 pt-3 text-[10px] font-mono-code text-on-surface-variant opacity-75">
+                  <span>AUDIT SYSTEM: ONLINE</span>
+                  <span class="text-secure-green flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secure-green animate-pulse"></span> LOCKED</span>
+                </div>
+              </div>
+
+              <!-- Whitelist Tags -->
+              <div class="relative bg-slate-surface border border-outline-variant/35 rounded p-5 space-y-4 shadow-xl cyber-card">
+                <h4 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+                  <span class="material-symbols-outlined text-secondary text-[16px]">verified</span>
+                  Access Operators Whitelist
+                </h4>
+                <p class="text-[10px] text-on-surface-variant leading-relaxed font-mono-code">Privileged alterations require authorized operator signatures.</p>
+                <div id="enterprise-tags" class="flex flex-wrap gap-1.5 py-1"></div>
+                <form id="whitelist-enterprise-form" class="flex gap-2">
+                  <input type="text" id="whitelist-enterprise-input" class="flex-1 bg-surface-dim border border-outline-variant/40 rounded px-2.5 py-1.5 text-xs text-on-surface font-mono-code placeholder:opacity-40" placeholder="e.g. COMPLIANCE_DIR" required/>
+                  <button type="submit" class="px-4 py-1.5 bg-secondary/15 border border-secondary/35 text-secondary hover:bg-secondary/25 text-xs font-bold rounded transition-colors shrink-0 font-mono-label glitch-btn">ADD</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- HEALTHCARE STATE METRICS -->
+            <div id="panel-healthcare" class="domain-panel hidden space-y-6">
+              <div class="relative bg-gradient-to-br from-slate-950 via-surface-container-high to-primary-container p-5 rounded border border-secondary/35 shadow-[0_0_20px_rgba(65,228,192,0.12)] overflow-hidden group cyber-card">
+                <div class="flex justify-between items-start mb-6">
+                  <span class="material-symbols-outlined text-secondary text-2xl">clinical_notes</span>
+                  <span class="font-mono-label text-[9px] text-secondary border border-secondary/40 px-2 py-0.5 rounded tracking-widest uppercase">HIPAA VAULT</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="text-[9px] text-on-surface-variant opacity-60 tracking-wider uppercase font-mono-label">Patient records</span>
+                    <h3 id="patient-records-count" class="text-2xl font-bold font-mono-code text-white">1,240</h3>
+                  </div>
+                  <div class="space-y-1">
+                    <span class="text-[9px] text-on-surface-variant opacity-60 tracking-wider uppercase font-mono-label">Audited shares</span>
+                    <h3 id="audits-count" class="text-2xl font-bold font-mono-code text-white">2 Audited</h3>
+                  </div>
+                </div>
+                
+                <!-- Live SVG Sparkline Chart -->
+                <div class="h-12 w-full mt-5 overflow-hidden bg-slate-950/70 rounded border border-outline-variant/10 relative">
+                  <svg class="w-full h-full text-tertiary-fixed-dim opacity-90" viewBox="0 0 100 30" preserveAspectRatio="none">
+                    <path id="healthcare-sparkline-path" class="sparkline-path" d="M 0,20 Q 10,25 20,10 Q 40,5 60,25 Q 80,15 100,20" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                  <div class="absolute top-1 left-2 text-[8px] font-mono-label text-on-surface-variant opacity-60 uppercase">HIPAA DECRYPTION WAVES</div>
+                </div>
+
+                <div class="mt-4 flex justify-between items-center border-t border-white/5 pt-3 text-[10px] font-mono-code text-on-surface-variant opacity-75">
+                  <span>COMPLIANCE: HIPAA VALID</span>
+                  <span class="text-secure-green flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secure-green animate-pulse"></span> ENCRYPTED</span>
+                </div>
+              </div>
+
+              <!-- Whitelist Tags -->
+              <div class="relative bg-slate-surface border border-outline-variant/35 rounded p-5 space-y-4 shadow-xl cyber-card">
+                <h4 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+                  <span class="material-symbols-outlined text-secondary text-[16px]">verified</span>
+                  Practitioners Email Whitelist
+                </h4>
+                <p class="text-[10px] text-on-surface-variant leading-relaxed font-mono-code">Medical report transfers are restricted to validated email domains.</p>
+                <div id="healthcare-tags" class="flex flex-wrap gap-1.5 py-1"></div>
+                <form id="whitelist-healthcare-form" class="flex gap-2">
+                  <input type="email" id="whitelist-healthcare-input" class="flex-1 bg-surface-dim border border-outline-variant/40 rounded px-2.5 py-1.5 text-xs text-on-surface font-mono-code placeholder:opacity-40" placeholder="e.g. doctor@armor.med" required/>
+                  <button type="submit" class="px-4 py-1.5 bg-secondary/15 border border-secondary/35 text-secondary hover:bg-secondary/25 text-xs font-bold rounded transition-colors shrink-0 font-mono-label glitch-btn">ADD</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- DEVOPS STATE METRICS -->
+            <div id="panel-devops" class="domain-panel hidden space-y-6">
+              <div class="relative bg-gradient-to-br from-slate-950 via-surface-container-high to-primary-container p-5 rounded border border-secondary/35 shadow-[0_0_20px_rgba(65,228,192,0.12)] overflow-hidden group cyber-card">
+                <div class="flex justify-between items-start mb-6">
+                  <span class="material-symbols-outlined text-secondary text-2xl">developer_board</span>
+                  <span class="font-mono-label text-[9px] text-secondary border border-secondary/40 px-2 py-0.5 rounded tracking-widest uppercase">CLUSTER METRICS</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="text-[9px] text-on-surface-variant opacity-60 tracking-wider uppercase font-mono-label">Active cloud nodes</span>
+                    <h3 id="nodes-count" class="text-2xl font-bold font-mono-code text-white">3 Nodes</h3>
+                  </div>
+                  <div class="space-y-1">
+                    <span class="text-[9px] text-on-surface-variant opacity-60 tracking-wider uppercase font-mono-label">CI/CD Deployments</span>
+                    <h3 id="releases-count" class="text-2xl font-bold font-mono-code text-white">2 Live</h3>
+                  </div>
+                </div>
+                
+                <!-- Live SVG Sparkline Chart -->
+                <div class="h-12 w-full mt-5 overflow-hidden bg-slate-950/70 rounded border border-outline-variant/10 relative">
+                  <svg class="w-full h-full text-accent-orange opacity-90" viewBox="0 0 100 30" preserveAspectRatio="none">
+                    <path id="devops-sparkline-path" class="sparkline-path" d="M 0,25 Q 15,20 30,10 Q 45,30 60,15 Q 75,5 90,25 Q 95,15 100,20" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                  <div class="absolute top-1 left-2 text-[8px] font-mono-label text-on-surface-variant opacity-60 uppercase">POD HOST CPU LOAD</div>
+                </div>
+
+                <div class="mt-4 flex justify-between items-center border-t border-white/5 pt-3 text-[10px] font-mono-code text-on-surface-variant opacity-75">
+                  <span>CONTAINERS: ONLINE</span>
+                  <span class="text-secure-green flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secure-green animate-pulse"></span> ACTIVE</span>
+                </div>
+              </div>
+
+              <!-- Whitelist Tags -->
+              <div class="relative bg-slate-surface border border-outline-variant/35 rounded p-5 space-y-4 shadow-xl cyber-card">
+                <h4 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+                  <span class="material-symbols-outlined text-secondary text-[16px]">verified</span>
+                  Verified Cloud Pods
+                </h4>
+                <p class="text-[10px] text-on-surface-variant leading-relaxed font-mono-code">Shell actions can only target whitelisted container nodes.</p>
+                <div id="devops-tags" class="flex flex-wrap gap-1.5 py-1"></div>
+                <form id="whitelist-devops-form" class="flex gap-2">
+                  <input type="text" id="whitelist-devops-input" class="flex-1 bg-surface-dim border border-outline-variant/40 rounded px-2.5 py-1.5 text-xs text-on-surface font-mono-code placeholder:opacity-40" placeholder="e.g. STAGING_DB_02" required/>
+                  <button type="submit" class="px-4 py-1.5 bg-secondary/15 border border-secondary/35 text-secondary hover:bg-secondary/25 text-xs font-bold rounded transition-colors shrink-0 font-mono-label glitch-btn">ADD</button>
+                </form>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Quick Global status / integrity Card -->
+          <div class="relative bg-slate-surface border border-outline-variant/35 rounded p-5 space-y-4 shadow-xl cyber-card">
+            <h4 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2 font-mono-label">
+              <span class="material-symbols-outlined text-secondary text-[16px]">query_stats</span>
+              Integrity Summary
+            </h4>
+            <div class="space-y-3 font-mono-code text-xs">
+              <div class="flex justify-between items-center py-1.5 border-b border-white/5">
+                <span class="text-on-surface-variant opacity-70">Approved operations:</span>
+                <span id="stat-verified" class="font-bold text-secure-green">0</span>
+              </div>
+              <div class="flex justify-between items-center py-1.5">
+                <span class="text-on-surface-variant opacity-70">Blocked attacks:</span>
+                <span id="stat-blocked" class="font-bold text-rejection-red">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div> <!-- End View: Governance -->
+
+    <!-- VIEW: SIGNED EXECUTION CHAINS -->
+    <div id="view-chains" class="view-section hidden space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-outline-variant/30 pb-4">
+        <div>
+          <h2 class="text-2xl font-bold text-on-surface flex items-center gap-3 font-mono-label"><span class="material-symbols-outlined text-secondary text-3xl">receipt_long</span> Cryptographic Execution Ledger</h2>
+          <p class="text-sm text-on-surface-variant mt-1">Immutable, tamper-evident SHA-256 lineage tracking all validated operations.</p>
+        </div>
+        <button id="download-csv-btn" class="px-5 py-2.5 bg-secondary/10 border border-secondary/35 text-secondary hover:bg-secondary/20 rounded font-mono-label text-xs uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105 shrink-0 glitch-btn">
+          <span class="material-symbols-outlined text-[16px]">download</span>
+          Download Cryptographic Audit CSV
+        </button>
+      </div>
+      
+      <div class="bg-surface-container border border-outline-variant/35 rounded overflow-x-auto shadow-2xl relative cyber-card">
+        <table class="w-full text-left border-collapse min-w-[700px]">
+          <thead>
+            <tr class="bg-surface-container-high border-b border-outline-variant/35 text-[10px] font-mono-label text-on-surface-variant uppercase tracking-widest">
+              <th class="p-4">Timestamp</th>
+              <th class="p-4">Governed Domain</th>
+              <th class="p-4">Proposed Intent</th>
+              <th class="p-4">Cryptographic Hash (SHA-256)</th>
+              <th class="p-4">Gating Status</th>
+            </tr>
+          </thead>
+          <tbody id="chains-table-body" class="text-sm font-mono-code divide-y divide-outline-variant/10">
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 text-on-surface-variant text-xs" colspan="5">Awaiting Engine Activation...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div> <!-- End View: Chains -->
+
+    <!-- VIEW: POLICY MANAGEMENT COCKPIT -->
+    <div id="view-policies" class="view-section hidden space-y-6">
+      <div class="border-b border-outline-variant/30 pb-4">
+        <h2 class="text-2xl font-bold text-on-surface flex items-center gap-3 font-mono-label"><span class="material-symbols-outlined text-rejection-red text-3xl">policy</span> Runtime Policy Cockpit</h2>
+        <p class="text-sm text-on-surface-variant mt-1">Modify global governance profiles and dynamic rule settings for active domains.</p>
+      </div>
+
+      <!-- Governance Profiles Console Card -->
+      <section class="bg-slate-surface border border-outline-variant/35 p-6 rounded flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl cyber-card">
+        <div class="space-y-2">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2 uppercase font-mono-label">
+            <span class="material-symbols-outlined text-secondary">admin_panel_settings</span>
+            Security Governance Profile
+          </h3>
+          <p class="text-sm text-on-surface-variant max-w-2xl leading-relaxed font-mono-code">
+            Swap profiles to re-configure system behavior. The <strong class="text-rejection-red font-bold">UNSAFE / BYPASS</strong> profile de-activates all gating middleware, providing immediate visual confirmation of why runtime verification matters.
+          </p>
+        </div>
+        
+        <!-- Active Profiles Selector Dropdown -->
+        <div class="flex flex-col gap-1.5 shrink-0 w-full sm:w-64">
+          <label class="text-[9px] font-bold text-on-surface-variant uppercase tracking-wider font-mono-label">Active Profile</label>
+          <select id="profile-selector" class="bg-surface-dim border border-outline-variant/50 rounded px-4 py-2.5 text-xs font-mono-code font-bold text-secondary focus:outline-none focus:border-secondary">
+            <option value="STRICT">STRICT (Zero-Trust Block)</option>
+            <option value="ENTERPRISE" selected>ENTERPRISE (HITL Gated)</option>
+            <option value="RESEARCH">RESEARCH (Reduced Controls)</option>
+            <option value="BYPASS">BYPASS (Governance OFF - Unsafe)</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Active domain Policies panel -->
+      <section class="space-y-4">
+        <h3 class="text-md font-bold text-on-surface uppercase tracking-wider flex items-center gap-2 font-mono-label">
+          <span class="material-symbols-outlined text-secondary">tune</span>
+          Domain Rules Setup: <span id="policy-domain-title" class="text-secondary font-bold font-mono-code">FINANCIAL OPERATIONS</span>
+        </h3>
+        
+        <div id="policies-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Policy cards will be injected dynamically in app.js -->
+        </div>
+      </section>
+    </div> <!-- End View: Policies -->
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
