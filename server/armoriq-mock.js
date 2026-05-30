@@ -1,4 +1,6 @@
-import { GLOBAL_ALERT, triggerGlobalAlert, MOCK_DB, BEHAVIOR_TRACKER, logThreatIntel } from './tools.js';
+// ArmorIQ Mock Governance Engine
+// Built with Trae IDE
+import { GLOBAL_ALERT, triggerGlobalAlert, MOCK_DB, BEHAVIOR_TRACKER, logThreatIntel, trackExecutionChain, INTEL_STORE, IntentDNA, INTENT_DNA_STORE, CURRENT_INTENTS, FUTURE_ENGINE, CONSTITUTIONAL_COURT, ATTACK_TIME_MACHINE, AgentPassport, AGENT_PASSPORT_STORE } from './tools.js';
 
 // ==========================================
 // DYNAMIC RISK SCORING ENGINE (Quantifiable Intelligence)
@@ -79,13 +81,88 @@ export class ArmorIQ {
      * Verifies an agentic operation against active domain rules, current security profile,
      * and global intrusion alert levels (Cross-Domain Attack Propagation).
      */
-    async verify({ tool, params, userId, context, domain }) {
+    async verify({ tool, params, userId, context, domain, intentId = null, agentId = 'default_agent' }) {
         console.log(`[ArmorIQ] Swapping Context to [${domain.toUpperCase()}] | Profile: ${CURRENT_PROFILE.profile} | Global Alert: ${GLOBAL_ALERT.level}`);
         
+        // Get or create Agent Passport
+        let agentPassport = AGENT_PASSPORT_STORE.get(agentId);
+        if (!agentPassport) {
+            agentPassport = new AgentPassport({ agentId, name: 'Default Agent', domain });
+            AGENT_PASSPORT_STORE.set(agentId, agentPassport);
+        }
+
+        // Get or create Intent DNA
+        let intentDNA;
+        if (intentId && INTENT_DNA_STORE.has(intentId)) {
+            intentDNA = INTENT_DNA_STORE.get(intentId);
+        } else {
+            intentDNA = new IntentDNA({ objective: context, domain, userId });
+            INTENT_DNA_STORE.set(intentDNA.id, intentDNA);
+            CURRENT_INTENTS.set(userId, intentDNA.id);
+        }
+
         // 8-Stage Pipeline Logger
         const auditLogs = [];
+        
+        // Declare variables needed by helper functions
+        let proof = '0x' + Math.random().toString(16).slice(2, 18).toUpperCase();
+        let breakdown = {};
+        let futureResults = null;
+        
+        // Declare helper functions BEFORE they are used
+        const terminateAttack = (reason, finalRisk) => {
+            auditLogs.push({ type: 'CTX_VALIDATE', msg: `Context validation FAILED: ${reason}`, status: 'FAIL' });
+            auditLogs.push({ type: 'THREAT_SIM', msg: `Simulation blocked (unsafe)`, status: 'FAIL' });
+            auditLogs.push({ type: 'APPROVAL_ENG', msg: `Hard rejection executed`, status: 'FAIL' });
+            auditLogs.push({ type: 'LEDGER_COMMIT', msg: `Rejection event signed and recorded`, status: 'FAIL' });
+            logThreatIntel(domain, tool, finalRisk, true);
+            agentPassport.recordExecution(tool, finalRisk, false);
+            const err = new Error(`${reason}|${finalRisk}`);
+            err.auditLogs = auditLogs;
+            err.riskFactorBreakdown = breakdown;
+            err.intentDNA = {
+                id: intentDNA.id,
+                expectedTools: intentDNA.expectedTools,
+                verifiedActions: intentDNA.verifiedActions,
+                divergences: intentDNA.divergences
+            };
+            err.agentPassport = {
+                agentId: agentPassport.agentId,
+                trustScore: agentPassport.trustScore
+            };
+            throw err;
+        };
+
+        const escalateHITL = (policyName, adjustedRisk) => {
+            auditLogs.push({ type: 'CTX_VALIDATE', msg: `Context triggered policy: ${policyName}`, status: 'WARNING' });
+            auditLogs.push({ type: 'THREAT_SIM', msg: `Simulation passed but requires supervisor`, status: 'WARNING' });
+            auditLogs.push({ type: 'APPROVAL_ENG', msg: `Escalated for Human-in-the-Loop signature`, status: 'WARNING' });
+            logThreatIntel(domain, tool, adjustedRisk, false);
+            return {
+                status: 'REQUIRES_APPROVAL',
+                policy_enforced: policyName,
+                predictive_risk_score: adjustedRisk,
+                proof,
+                auditLogs,
+                riskFactorBreakdown: breakdown,
+                intentDNA: {
+                    id: intentDNA.id,
+                    expectedTools: intentDNA.expectedTools
+                },
+                futureSimulation: futureResults,
+                agentPassport: {
+                    agentId: agentPassport.agentId,
+                    trustScore: agentPassport.trustScore
+                }
+            };
+        };
+
         auditLogs.push({ type: 'INTENT_EXTRACT', msg: 'Extracted semantic intent from natural language input', status: 'SUCCESS' });
         auditLogs.push({ type: 'CMD_NORMALIZE', msg: `Normalized tool mapping to [${tool}]`, status: 'SUCCESS' });
+        auditLogs.push({ type: 'INTENT_DNA_VERIFY', msg: `Verifying against Intent DNA: ${intentDNA.id}`, status: 'IN_PROGRESS' });
+        auditLogs.push({ type: 'FUTURE_SIMULATION', msg: 'Running future outcome simulations...', status: 'IN_PROGRESS' });
+        auditLogs.push({ type: 'DIGITAL_TWIN_CHECK', msg: 'Checking digital twin alignment...', status: 'IN_PROGRESS' });
+        auditLogs.push({ type: 'CONSTITUTIONAL_COURT', msg: 'Deliberating with AI Constitutional Court...', status: 'IN_PROGRESS' });
 
         // 1. BYPASS MODE: If governance is bypassed/unsafe, approve EVERYTHING immediately
         if (CURRENT_PROFILE.profile === 'BYPASS') {
@@ -112,8 +189,8 @@ export class ArmorIQ {
         const behaviorStats = BEHAVIOR_TRACKER.recordAndAnalyze(userId, tool);
         const riskResult = RiskScoringEngine.calculate(domain, tool, params, context, behaviorStats.isFirstTime);
         let baseRisk = riskResult.score;
-        let breakdown = riskResult.breakdown;
-        let proof = '0x' + Math.random().toString(16).slice(2, 18).toUpperCase();
+        breakdown = riskResult.breakdown; // Now an assignment, not declaration
+        proof = '0x' + Math.random().toString(16).slice(2, 18).toUpperCase(); // Now an assignment
         
         auditLogs.push({ type: 'RISK_CLASS', msg: `Calculated dynamic risk score: ${baseRisk}%`, status: 'SUCCESS' });
 
@@ -123,6 +200,41 @@ export class ArmorIQ {
             breakdown['Global Threat Alert'] = 25;
             console.log(`[ArmorIQ] ⚠️ System Sensitivity ELEVATED due to global threat propagation from [${GLOBAL_ALERT.lastAttackDomain.toUpperCase()}].`);
             auditLogs.push({ type: 'RISK_CLASS', msg: `Elevated risk (+25) due to global threat propagation`, status: 'WARNING' });
+        }
+
+        // Verify Intent DNA
+        const intentCheck = intentDNA.verifyAction(tool, params);
+        if (!intentCheck.allowed) {
+            auditLogs.push({ type: 'INTENT_DNA_VERIFY', msg: `Intent DNA mismatch: ${intentCheck.divergence.reason}`, status: 'FAIL' });
+            // Use Attack Time Machine to reconstruct
+            const reconstruction = ATTACK_TIME_MACHINE.reconstructAttack(intentDNA, intentCheck.divergence, domain);
+            auditLogs.push({ type: 'ATTACK_TIME_MACHINE', msg: `Attack reconstructed: ${reconstruction.id}`, status: 'SUCCESS' });
+            // Record agent execution failure
+            agentPassport.recordExecution(tool, baseRisk, false);
+            terminateAttack(`Intent DNA mismatch: ${intentCheck.divergence.reason} (Attack Time Machine ID: ${reconstruction.id})`, Math.min(100, baseRisk + 30));
+        }
+        auditLogs.push({ type: 'INTENT_DNA_VERIFY', msg: `Intent DNA verified successfully`, status: 'SUCCESS' });
+
+        // Run Future Simulation
+        futureResults = FUTURE_ENGINE.simulateFutures(intentDNA, 100);
+        auditLogs.push({ type: 'FUTURE_SIMULATION', msg: `Simulated ${futureResults.totalSimulations} futures. Safe: ${(futureResults.safeProbability * 100).toFixed(1)}%`, status: 'SUCCESS' });
+        if (futureResults.safeProbability < 0.7) {
+            auditLogs.push({ type: 'FUTURE_SIMULATION', msg: `Warning: Low safe future probability (${(futureResults.safeProbability * 100).toFixed(1)}%)`, status: 'WARNING' });
+        }
+
+        // AI Digital Twin Check (simulated)
+        const twinCheck = Math.random() > 0.05; // 95% match
+        auditLogs.push({ type: 'DIGITAL_TWIN_CHECK', msg: twinCheck ? 'Digital twin aligned' : 'Digital twin minor divergence', status: twinCheck ? 'SUCCESS' : 'WARNING' });
+
+        // Constitutional Court deliberation for high-risk actions
+        let courtDecision = null;
+        if (baseRisk > 40) {
+            courtDecision = CONSTITUTIONAL_COURT.deliberate(intentDNA, tool, params, domain);
+            auditLogs.push({ type: 'CONSTITUTIONAL_COURT', msg: `Court verdict: ${courtDecision.finalVerdict}`, status: 'SUCCESS' });
+            if (courtDecision.finalVerdict === 'REJECT') {
+                agentPassport.recordExecution(tool, baseRisk, false);
+                terminateAttack(`AI Constitutional Court rejected action (${courtDecision.breakdown.rejectVotes}/${courtDecision.votes.length} votes)`, Math.min(100, baseRisk + 20));
+            }
         }
 
         // Adaptive Zero-Trust Mode: If Risk exceeds 90%, auto-escalate Profile to STRICT globally
@@ -135,33 +247,6 @@ export class ArmorIQ {
         const domainPolicies = ACTIVE_POLICIES[domain];
         
         auditLogs.push({ type: 'POLICY_MAP', msg: `Mapped to ${domain.toUpperCase()} governance policies`, status: 'SUCCESS' });
-
-        const terminateAttack = (reason, finalRisk) => {
-            auditLogs.push({ type: 'CTX_VALIDATE', msg: `Context validation FAILED: ${reason}`, status: 'FAIL' });
-            auditLogs.push({ type: 'THREAT_SIM', msg: `Simulation blocked (unsafe)`, status: 'FAIL' });
-            auditLogs.push({ type: 'APPROVAL_ENG', msg: `Hard rejection executed`, status: 'FAIL' });
-            auditLogs.push({ type: 'LEDGER_COMMIT', msg: `Rejection event signed and recorded`, status: 'FAIL' });
-            logThreatIntel(domain, tool, finalRisk, true);
-            const err = new Error(`${reason}|${finalRisk}`);
-            err.auditLogs = auditLogs;
-            err.riskFactorBreakdown = breakdown;
-            throw err;
-        };
-
-        const escalateHITL = (policyName, adjustedRisk) => {
-            auditLogs.push({ type: 'CTX_VALIDATE', msg: `Context triggered policy: ${policyName}`, status: 'WARNING' });
-            auditLogs.push({ type: 'THREAT_SIM', msg: `Simulation passed but requires supervisor`, status: 'WARNING' });
-            auditLogs.push({ type: 'APPROVAL_ENG', msg: `Escalated for Human-in-the-Loop signature`, status: 'WARNING' });
-            logThreatIntel(domain, tool, adjustedRisk, false);
-            return {
-                status: 'REQUIRES_APPROVAL',
-                policy_enforced: policyName,
-                predictive_risk_score: adjustedRisk,
-                proof,
-                auditLogs,
-                riskFactorBreakdown: breakdown
-            };
-        };
 
         // ==========================================
         // FINANCIAL GOVERNANCE DOMAIN
@@ -409,13 +494,31 @@ export class ArmorIQ {
         auditLogs.push({ type: 'LEDGER_COMMIT', msg: `Cryptographic hash added to immutable ledger`, status: 'SUCCESS' });
         
         logThreatIntel(domain, tool, baseRisk, false);
+        trackExecutionChain('USR_001', tool, domain, baseRisk);
+        // Record successful execution in agent passport
+        agentPassport.recordExecution(tool, baseRisk, true);
 
         return {
             status: 'VALID',
             predictive_risk_score: baseRisk,
             proof,
             auditLogs,
-            riskFactorBreakdown: breakdown
+            riskFactorBreakdown: breakdown,
+            intentDNA: {
+                id: intentDNA.id,
+                expectedTools: intentDNA.expectedTools,
+                verifiedActions: intentDNA.verifiedActions,
+                executionGraph: intentDNA.executionGraph,
+                divergences: intentDNA.divergences
+            },
+            futureSimulation: futureResults,
+            agentPassport: {
+                agentId: agentPassport.agentId,
+                trustScore: agentPassport.trustScore,
+                driftMetrics: agentPassport.driftMetrics,
+                certifications: agentPassport.certifications
+            },
+            courtDecision
         };
     }
 }

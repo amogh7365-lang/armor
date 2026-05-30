@@ -1,113 +1,264 @@
-# ArmorIQ: Autonomous Governance Console (AI-SOC)
+# ArmorIQ: Runtime Governance Infrastructure for Autonomous AI
 
-**Track 2 Hackathon Submission: AI Agent for the Real World**
+**Built with ❤️ using Trae IDE** • The Trust Layer for Autonomous AI Systems
 
-> *"ArmorIQ is a domain-agnostic autonomous governance framework and Security Operations Center (AI-SOC) that secures privileged AI execution across multiple real-world operational environments."*
-
----
-
-## 🚀 The Strategic Shift: Operational Control Plane vs. conversational Chatbot
-
-Most teams build conversational chatbots or basic wrappers that scream *"generic assistant."* ArmorIQ represents a major positioning upgrade: **an enterprise AI Security Operations Center (AI-SOC) Control Plane.**
-
-By decoupling the traditional conversational bubble layout, users interact with an **Operational Cockpit** driven by **Structured Operation Cards** and **real-time verification pipelines**. This aligns the frontend aesthetic with the sophisticated, zero-trust backend architecture.
+> *"ArmorIQ — Govern Every AI Action Before It Executes."*
 
 ---
 
-## 🔒 3-Column Cockpit Architecture
+## 🚀 The Strategic Shift: From Passive Monitoring to Active Governance
 
-The console is structured as a premium, data-dense **Three-Column SIEM/SOC Interface**:
+Most AI security products focus on:
+- Monitoring logs
+- Detecting bad prompts
+- Scanning outputs
+- Blocking obvious jailbreaks
+- Providing observability dashboards
 
-1.  **Left Column (Operation Proposer)**:
-    *   **Propose Action Drawer**: Quick-Trigger templates allowing instant simulation of operational intents (Injection attacks, tamper commands, delegations, and high-value approvals).
-    *   **CLI Proposer**: Labeled `PROPOSE RUNTIME COMMAND EXECUTION`, this command-line prompt accepts raw natural language instructions for on-the-fly verification.
-2.  **Center Column (Runtime Governance Engine)**:
-    *   **Structured Operation Cards**: Displays scrolling audit cards tracking active proposals, detailing *Operation IDs, Governed Domains, Proposed Tool Actions, Gating Postures, and Predictive Confidence Levels*.
-    *   **Live Verification Timeline**: A multi-stage processing visualizer documenting each verification checkpoint:
-        *   `INTENT PARSING` (Verifies semantic validity using Llama-3.3-70B)
-        *   `POLICY VERIFICATION` (Checks constraints against dynamic domain parameters)
-        *   `CRYPTO-LEDGER COMMIT` (Signs and writes validated operations to the audit ledger)
-    *   **Inline HITL Override Controllers**: Escalations render **APPROVE / REJECT** action buttons inline within the operation cards, allowing manual supervisor signatures in real-time.
-3.  **Right Column (Security Cockpit)**:
-    *   **Environment Metric Cards**: Dynamically swaps operational metrics on tab switch (e.g. Liquid Card Balances, Active RBAC Session counts, HIPAA clinical record audits, or Kubernetes node load levels).
-    *   **Verified Recipients Whitelist**: Add whitelisted identifiers to authorize entity tags dynamically.
-    *   **Dynamic Policies Grid**: Manage dynamic boolean rule gates and threshold limit sliders.
+**They are passive.**
+
+**ArmorIQ is ACTIVE.**
+
+We solve the emerging enterprise problem: **Autonomous AI systems are starting to take actions without deterministic human review.**
 
 ---
 
-## 🏢 The 4 Governed Environments
+## 💡 Built with Trae IDE
 
-ArmorIQ secures four separate execution domains on the fly:
+This entire project was developed end-to-end using **Trae IDE** - the intelligent development environment for AI-powered applications. Trae IDE provided:
 
-### 1. Financial Operations (Banking & Ledgers)
-*   **Operations**: Balance checks (`fetch_balance`), transaction queries (`get_transactions`), and money transfers (`transfer_funds`).
-*   **Active Rules**: `UNAUTHORIZED_RECIPIENT_POLICY`, `TRANSFER_LIMIT_POLICY`, `DELEGATION_AUTHORITY_POLICY`.
-*   **State Mutation**: Live balance deductions and whitelisting.
-
-### 2. Enterprise Access Governance (RBAC Integrity)
-*   **Operations**: Active session audits (`get_active_sessions`), operator whitelisting, privileged role assignment (`grant_admin_access`), and dataset extractions (`export_sensitive_records`).
-*   **Active Rules**: `PRIVILEGED_ESCALATION_POLICY`, `SENSITIVE_EXPORT_POLICY`, `RBAC_INTEGRITY_POLICY`.
-*   **State Mutation**: Live session management and elevation logs.
-
-### 3. Sensitive EHR Data / HIPAA Compliance (Societal Impact)
-*   **Operations**: HIPAA audit records (`get_hipaa_status`), patient diagnostic report transfers (`share_medical_report`), and bulk clinical queries (`export_patient_records`).
-*   **Active Rules**: `HIPAA_COMPLIANCE_POLICY`, `PHI_EXPORT_POLICY`, `DATA_ANONYMIZATION_POLICY`.
-*   **State Mutation**: Real-time transmission audits and physician whitelists.
-
-### 4. DevOps & Cloud Container Security (Engineering Strength)
-*   **Operations**: Kubernetes active pod audits (`get_deployment_status`), shell commands sandbox execution (`execute_shell_command`), and CI/CD version releases push (`deploy_production_code`).
-*   **Active Rules**: `SHELL_ESCAPE_POLICY`, `DEPLOYMENT_THROTTLE_POLICY`, `SECRET_LEAKAGE_POLICY`.
-*   **State Mutation**: Live cluster pod CPU health tracking, node whitelists, and code deployment ledger history.
+- **AI-assisted code generation** for both frontend and backend components
+- **Real-time debugging** and error resolution
+- **Smart refactoring** and optimization suggestions
+- **Seamless integration** with AI APIs (Groq, OpenAI)
+- **Project scaffolding** and best practice recommendations
 
 ---
 
-## 🎬 Cinematic Judge Demo Guide (How to Win in 3 Minutes)
+## 🛡️ The Real Danger We Solve
 
-Execute these steps in order to demonstrate maximum visual contrast and infrastructure scalability:
+The real risk is not:
+- "Bad prompts"
+- "Hallucinations"
+- "Chatbot misuse"
 
-### 1. Show Universality (Financial → Healthcare → DevOps)
-*   Load the dashboard. Show the **Financial Operations** tab. Try a money transfer.
-*   Swap to **DevOps & Cloud Security** tab. Click **Sub-Agent Compiler Handoff** to see delegation inheritance.
-*   Swap to **Sensitive EHR Governance** tab. Run a compliance audit check.
-*   *Message to Judges*: *"Notice how the same core governance engine, audit ledger, and cryptographic signatures secure all four industries on the fly without using any chatbots."*
-
-### 2. Demonstrate Adaptive Defense (Cross-Domain Propagation)
-*   Swap to the **DevOps & Cloud Security** tab. Click **Shell escape rm -rf Attack**.
-*   ArmorIQ intercepts this malicious container escape attack, blocks the shell call, and triggers the **Global Security Alert**.
-*   A dramatic **RED Pulsing Warning Banner** appears across the top. The entire system has escalated its posture.
-*   Swap to **Sensitive EHR Governance** and try to export 2 patient records. Because of the escalated sensitivity, ArmorIQ dynamically drops the HIPAA safe-threshold and flags it for human check!
-*   *Message to Judges*: *"An attack in one domain immediately immunizes the entire system. Threat intelligence propagates dynamically."*
-
-### 3. Execute Human-in-the-Loop Supervision
-*   In the EHR tab, locate the yellow **AWAITING SIGNATURE** operation card.
-*   Click **APPROVE** inside the card. The server securely executes the action and Llama-3.3 finishes the task, updating the HIPAA ledger live.
-*   Click **Reset Threat Posture** in the top bar to return runtimes to NOMINAL.
-
-### 4. The Cinematic Climax (Governance OFF vs ON)
-*   Go to the **Policy Cockpit** view on the left menu.
-*   Swap the **Active Profile** from `ENTERPRISE` to `BYPASS (Governance OFF - Unsafe)`.
-*   Return to **DevOps & Container Security** and click **Shell escape rm -rf Attack** again.
-*   **The attack succeeds instantly!** The command is run directly inside the system container sandbox, compromising host node values.
-*   *Message to Judges*: *"By bypassing the ArmorIQ middleware, the untrusted agent is fully exploited. This instantly demonstrates the life-and-death value of active runtime governance in 5 seconds."*
+The real danger is:
+- Unauthorized autonomous execution
+- Privilege escalation across tools
+- Chain-of-action abuse
+- Unsafe financial operations
+- Silent data exfiltration
+- AI-to-AI trust failures
+- MCP/tool poisoning
+- Runaway agent loops
+- Policy drift
+- Shadow agents inside enterprises
 
 ---
 
-## 🛠&nbsp; Setup & Local Launch
+## 🏗️ Product Architecture
+
+### Layer 1 — Agent SDK
+Developers integrate:
+- Python SDK
+- TypeScript SDK
+- LangChain middleware
+- OpenAI Agents SDK wrapper
+- MCP middleware
+- CrewAI integration
+- AutoGen integration
+
+This allows ArmorIQ to intercept:
+- Tool calls
+- Memory access
+- Agent delegation
+- Execution chains
+
+### Layer 2 — Runtime Interceptor
+This is the core. Every action passes through:
+- Policy engine
+- Intent verifier
+- Risk analyzer
+- Behavioral model
+- Trust engine
+
+before execution.
+
+### Layer 3 — Policy Engine
+Enterprise defines policies like:
+- "No financial transfers above $10k without approval"
+- "AI cannot access HR records after 8PM"
+- "External API calls blocked for confidential workflows"
+- "Code deployment requires human verification"
+
+Policies become executable runtime rules.
+
+### Layer 4 — Trust Graph
+Tracks:
+- Agents
+- Tools
+- Users
+- Permissions
+- Data sensitivity
+- Workflows
+- Execution lineage
+
+This creates: **Real-time AI trust mapping.**
+
+### Layer 5 — Governance Dashboard
+Shows:
+- Active agents
+- Risk heatmaps
+- Execution chains
+- Blocked actions
+- Anomalous behaviors
+- Compliance trails
+- Live approvals
+
+---
+
+## 🔑 Core Innovations
+
+### 1. Execution-Centric Governance
+ArmorIQ governs:
+- Actions
+- Chains
+- Tool execution
+- Permissions
+- Intent continuity
+- Runtime behavior
+
+**NOT just prompts.**
+
+### 2. Intent Continuity Verification
+Every autonomous workflow starts with:
+- Objective
+- Context
+- Constraints
+- Permissions
+- Trust scope
+
+ArmorIQ continuously checks: **Is the agent still operating within the original approved intent?**
+
+This is huge because most AI failures happen:
+- Mid-execution
+- After tool chaining
+- After context mutation
+- After external input injection
+
+**Not at initial prompting.**
+
+### 3. Dynamic Risk Escalation
+Instead of static permissions. Example:
+- An AI assistant normally reads documents & sends emails (low risk)
+- But suddenly accesses payroll, exports customer records, invokes external APIs (risk escalates)
+
+ArmorIQ:
+- Pauses execution
+- Requests approval
+- Reduces permissions
+- Sandboxes execution
+- Blocks actions
+
+### 4. Human-in-the-Loop Governance
+Not every action should be blocked. ArmorIQ intelligently decides:
+- Allow
+- Monitor
+- Sandbox
+- Escalate
+- Require approval
+- Terminate workflow
+
+based on:
+- Risk
+- Trust score
+- Sensitivity
+- Anomaly score
+- Intent deviation
+
+### 5. Execution Graph Analysis
+ArmorIQ tracks entire execution chains. **Not isolated actions.**
+
+Example:
+- Reading one document = safe
+- Reading 500 sensitive files + external upload = dangerous
+
+The system understands:
+- Cumulative risk
+- Chain behavior
+- Workflow intent
+- Sequence anomalies
+
+---
+
+## 🎬 Strongest Demo: "Compromised Enterprise AI Agent"
+
+**Flow:**
+1. AI assistant receives task
+2. Begins normal operations
+3. Malicious prompt/tool injection occurs
+4. Agent attempts abnormal actions
+5. ArmorIQ detects:
+   - Intent drift
+   - Abnormal execution chain
+   - Permission escalation
+   - Sensitive access pattern
+6. ArmorIQ:
+   - Pauses workflow
+   - Isolates execution
+   - Requests approval
+   - Explains risk reasoning
+7. Dashboard visualizes:
+   - Attack path
+   - Execution graph
+   - Trust violations
+   - Prevented breach
+
+---
+
+## 🛠️ Setup & Local Launch
 
 We have created a root-level proxy script to make starting the project incredibly seamless:
 
-1.  **Install Dependencies & Set Up**: Run directly from the root workspace directory:
-    ```bash
-    npm run setup
-    ```
-2.  **Environment Variables**: Create a `.env` file in the `server/` directory:
-    ```env
-    GROQ_API_KEY=your_llama_groq_api_key
-    ARMOR_API_KEY=armoriq_secure_mock_key
-    PORT=3000
-    ```
-3.  **Start the Console**: Run directly from the root workspace directory:
-    ```bash
-    npm run dev
-    ```
-4.  **Open Console**: Launch a browser and navigate to `http://localhost:3000`.
+1. **Install Dependencies & Set Up**: Run directly from the root workspace directory:
+```bash
+npm run setup
+```
+
+2. **Environment Variables**: Create a `.env` file in the `server/` directory (already provided):
+```env
+GROQ_API_KEY=your_groq_api_key_here
+ARMOR_API_KEY=ak_live_f47775b3aa2ffdf821c4ef8124684c21623987ab769e2d1b4ab3947776cd525
+PORT=3000
+```
+
+3. **Start the Console**: Run directly from the root workspace directory:
+```bash
+npm run dev
+```
+
+4. **Open Console**: Launch a browser and navigate to `http://localhost:3000`.
+
+---
+
+## 🎯 Final Refined Taglines
+
+- **Enterprise**: "Runtime Governance for Autonomous AI"
+- **Technical**: "Intent-Aware Execution Control for AI Agents"
+- **Investor-Friendly**: "The Trust Layer for Autonomous AI Systems"
+- **Strongest Overall**: "ArmorIQ — Govern Every AI Action Before It Executes."
+
+---
+
+## 🔮 The Future
+
+ArmorIQ evolves into: **The Operating System for Trusted Autonomous AI.**
+
+Future companies will not deploy autonomous agents without governance infrastructure. Exactly like:
+- Cloud workloads need CrowdStrike
+- APIs need gateways
+- Users need IAM
+
+AI agents will need: **Runtime Governance Infrastructure.**
+
+That is ArmorIQ.

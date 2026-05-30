@@ -119,3 +119,45 @@ body {
 .animate-shake {
     animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
 }
+
+/* Globe Telemetry HUD Styling & Glow Effects */
+@keyframes hud-pulse {
+    0%, 100% { border-color: rgba(255, 77, 77, 0.25); }
+    50% { border-color: rgba(255, 77, 77, 0.7); box-shadow: 0 0 15px rgba(255, 77, 77, 0.3); }
+}
+
+.glow-hud-pulse {
+    animation: hud-pulse 0.4s ease-out;
+}
+
+#globe-container button {
+    border-radius: 2px;
+    font-size: 8px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#globe-container button:hover {
+    filter: brightness(1.2);
+}
+
+#globe-container button.active {
+    background-color: rgba(65, 228, 192, 0.25) !important;
+    color: #41e4c0 !important;
+    border-color: #41e4c0 !important;
+}
+
+#globe-container input[type="checkbox"] {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#globe-container input[type="checkbox"]:hover {
+    border-color: #41e4c0;
+}
+
+#globe-container {
+    height: 650px !important;
+    width: 100% !important;
+}

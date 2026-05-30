@@ -1,10 +1,27 @@
 {
   "name": "armoriq-workspace-root",
   "version": "1.0.0",
-  "description": "ArmorIQ Root Workspace Command Center",
+  "description": "ArmorIQ Root Workspace Command Center - Built with Trae IDE",
+  "author": "Trae IDE",
+  "keywords": [
+    "trae-ide",
+    "ai",
+    "security",
+    "governance",
+    "ai-soc"
+  ],
+  "license": "MIT",
   "scripts": {
     "setup": "npm install && cd server && npm install",
     "start": "cd server && npm start",
-    "dev": "cd server && npm run dev"
+    "dev": "cd server && npm run dev",
+    "prod": "cd server && NODE_ENV=production npm start"
+  },
+  "dependencies": {
+    "gsap": "^3.15.0",
+    "three": "^0.150.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }

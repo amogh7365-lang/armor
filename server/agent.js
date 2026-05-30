@@ -1,6 +1,6 @@
 import Groq from 'groq-sdk';
 import { ArmorIQ } from './armoriq-mock.js';
-import { tools, toolDefinitions } from './tools.js';
+import { tools, toolDefinitions, CURRENT_INTENTS } from './tools.js';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 
@@ -79,6 +79,7 @@ export async function processAgentRequest(userId, message, domain = 'financial')
             const results = [];
             let lastProposedIntent = null;
             let lastVerificationMetadata = null;
+            let lastArmorResponse = null;
 
             for (const toolCall of choice.tool_calls) {
                 const { name, arguments: argsString } = toolCall.function;
@@ -104,18 +105,23 @@ export async function processAgentRequest(userId, message, domain = 'financial')
                 log('STAGE_3', `Risk Classification: Dynamic scoring initiated`, 'PENDING');
 
                 try {
+                    // Get current intent ID for user
+                    const currentIntentId = CURRENT_INTENTS.get(userId);
                     // REAL ARMORIQ INTEGRATION Pattern
                     const armorResponse = await armoriq.verify({
                         tool: name,
                         params: args,
                         userId: userId,
                         context: message,
-                        domain: domain
+                        domain: domain,
+                        intentId: currentIntentId,
+                        agentId: 'default_agent'
                     });
 
                     log('STAGE_4', `Policy Mapping: Cross-referenced active policies`, 'SUCCESS');
                     log('STAGE_5', `Context Validation: User history & role checked`, 'SUCCESS');
                     log('STAGE_6', `Threat Simulation: Acceptable blast radius`, 'SUCCESS');
+                    lastArmorResponse = armorResponse;
                     log('STAGE_7', `Approval Engine: Status -> ${armorResponse.status}`, 'SUCCESS');
 
                     // Success or Escalation paths
@@ -143,7 +149,11 @@ export async function processAgentRequest(userId, message, domain = 'financial')
                             reply: `This action exceeds the autonomous threshold limit in [${domain.toUpperCase()}] and requires human authorization to proceed.`,
                             auditLogs,
                             agentic_proposal: name,
-                            verification_metadata: lastVerificationMetadata
+                            verification_metadata: lastVerificationMetadata,
+                            intentDNA: armorResponse.intentDNA,
+                            futureSimulation: armorResponse.futureSimulation,
+                            agentPassport: armorResponse.agentPassport,
+                            courtDecision: armorResponse.courtDecision
                         };
                     } else if (armorResponse.status === "DELEGATED") {
                         lastVerificationMetadata.classification = "SUB_AGENT_DELEGATION";
@@ -197,7 +207,9 @@ export async function processAgentRequest(userId, message, domain = 'financial')
                         reply: `I'm sorry, but that action was blocked by security protocols. Every action must be cryptographically verified against a signed execution plan.`,
                         auditLogs,
                         agentic_proposal: name,
-                        verification_metadata: lastVerificationMetadata
+                        verification_metadata: lastVerificationMetadata,
+                        intentDNA: err.intentDNA,
+                        agentPassport: err.agentPassport
                     };
                 }
             }
@@ -217,7 +229,11 @@ export async function processAgentRequest(userId, message, domain = 'financial')
                 reply: finalResponse.choices[0].message.content, 
                 auditLogs,
                 agentic_proposal: lastProposedIntent.agentic_proposal,
-                verification_metadata: lastVerificationMetadata
+                verification_metadata: lastVerificationMetadata,
+                intentDNA: lastArmorResponse?.intentDNA,
+                futureSimulation: lastArmorResponse?.futureSimulation,
+                agentPassport: lastArmorResponse?.agentPassport,
+                courtDecision: lastArmorResponse?.courtDecision
             };
         }
 

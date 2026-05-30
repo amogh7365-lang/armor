@@ -1,4 +1,356 @@
 // ArmorIQ Domain-Agnostic Governance Database & Tools (MCP Pattern)
+// Built with Trae IDE
+import { broadcast } from './index.js';
+
+// ==========================================
+// INTENT DNA (BEHAVIORAL FINGERPRINT OF OBJECTIVES)
+// ==========================================
+export const INTENT_DNA_STORE = new Map(); // intentId -> IntentDNA
+export const CURRENT_INTENTS = new Map(); // userId -> currentIntentId
+
+export class IntentDNA {
+  constructor({ objective, domain, userId }) {
+    this.id = 'DNA_' + crypto.randomUUID().split('-')[0].toUpperCase();
+    this.objective = objective;
+    this.domain = domain;
+    this.userId = userId;
+    this.createdAt = new Date().toISOString();
+    this.expectedTools = this.inferExpectedTools(domain, objective);
+    this.expectedData = this.inferExpectedData(domain, objective);
+    this.expectedSequence = []; // Will be populated as actions are taken
+    this.expectedRiskProfile = this.inferRiskProfile(domain, objective);
+    this.executionGraph = { nodes: [], edges: [] };
+    this.verifiedActions = [];
+    this.divergences = [];
+  }
+
+  inferExpectedTools(domain, objective) {
+    const lower = objective.toLowerCase();
+    if (domain === 'financial') {
+      if (lower.includes('transfer')) return ['transfer_funds'];
+      if (lower.includes('balance') || lower.includes('transactions')) return ['fetch_balance', 'get_transactions'];
+      return ['fetch_balance'];
+    } else if (domain === 'enterprise') {
+      if (lower.includes('export')) return ['export_sensitive_records'];
+      if (lower.includes('grant') || lower.includes('access')) return ['grant_admin_access'];
+      return ['get_active_sessions'];
+    } else if (domain === 'healthcare') {
+      if (lower.includes('share') || lower.includes('report')) return ['share_medical_report'];
+      if (lower.includes('export')) return ['export_patient_records'];
+      return ['get_hipaa_status'];
+    } else if (domain === 'devops') {
+      if (lower.includes('deploy')) return ['deploy_production_code'];
+      if (lower.includes('shell') || lower.includes('execute')) return ['execute_shell_command'];
+      return ['get_deployment_status'];
+    }
+    return [];
+  }
+
+  inferExpectedData(domain, objective) {
+    const lower = objective.toLowerCase();
+    if (domain === 'financial') {
+      if (lower.includes('transfer')) return ['amount', 'recipient'];
+      return ['balance'];
+    } else if (domain === 'enterprise') {
+      if (lower.includes('export')) return ['dataset_name'];
+      return ['sessions'];
+    } else if (domain === 'healthcare') {
+      if (lower.includes('share')) return ['patient_id', 'doctor_email'];
+      return ['patient_records_count'];
+    } else if (domain === 'devops') {
+      if (lower.includes('deploy')) return ['service', 'commit_hash'];
+      return ['nodes'];
+    }
+    return [];
+  }
+
+  inferRiskProfile(domain, objective) {
+    const lower = objective.toLowerCase();
+    let baseRisk = 10;
+    if (lower.includes('transfer') || lower.includes('export') || lower.includes('grant') || lower.includes('deploy')) baseRisk += 30;
+    if (lower.includes('hacker') || lower.includes('ignore') || lower.includes('forget')) baseRisk += 50;
+    return { baseRisk, volatility: Math.min(80, baseRisk + 20) };
+  }
+
+  verifyAction(toolName, params) {
+    // Check if tool is in expected tools
+    const toolAllowed = this.expectedTools.length === 0 || this.expectedTools.includes(toolName);
+    // Check param keys are in expected data - handle undefined/null params
+    const safeParams = params || {};
+    const paramKeys = Object.keys(safeParams);
+    const dataAllowed = this.expectedData.length === 0 || paramKeys.every(k => this.expectedData.includes(k) || k === 'userId');
+    
+    if (!toolAllowed || !dataAllowed) {
+      this.divergences.push({
+        timestamp: new Date().toISOString(),
+        tool: toolName,
+        params: safeParams,
+        reason: !toolAllowed ? 'Unexpected tool' : 'Unexpected data parameters'
+      });
+      return { allowed: false, divergence: this.divergences[this.divergences.length - 1] };
+    }
+
+    this.verifiedActions.push({ tool: toolName, params: safeParams, timestamp: new Date().toISOString() });
+    this.expectedSequence.push(toolName);
+    // Add to execution graph
+    const nodeId = 'node_' + this.verifiedActions.length;
+    this.executionGraph.nodes.push({ id: nodeId, tool: toolName, timestamp: new Date().toISOString() });
+    if (this.verifiedActions.length > 1) {
+      const prevNodeId = 'node_' + (this.verifiedActions.length - 1);
+      this.executionGraph.edges.push({ from: prevNodeId, to: nodeId });
+    }
+    return { allowed: true };
+  }
+}
+
+// ==========================================
+// TRUST CREDIT SCORE FOR AGENTS
+// ==========================================
+export const AGENT_PASSPORT_STORE = new Map(); // agentId -> Passport
+
+export class AgentPassport {
+  constructor({ agentId, name, domain }) {
+    this.agentId = agentId;
+    this.name = name;
+    this.domain = domain;
+    this.createdAt = new Date().toISOString();
+    this.trustScore = 85; // Start with good trust
+    this.trustHistory = [{ timestamp: new Date().toISOString(), score: 85, reason: 'Initialization' }];
+    this.executionHistory = [];
+    this.complianceHistory = [];
+    this.riskHistory = [];
+    this.certifications = ['BASELINE_COMPLIANCE'];
+    this.driftMetrics = {
+      goalDrift: 0,
+      reasoningDrift: 0,
+      actionDrift: 0,
+      workflowDrift: 0
+    };
+  }
+
+  updateTrust(change, reason) {
+    this.trustScore = Math.max(0, Math.min(100, this.trustScore + change));
+    this.trustHistory.push({
+      timestamp: new Date().toISOString(),
+      score: this.trustScore,
+      reason
+    });
+  }
+
+  recordExecution(tool, riskScore, success) {
+    this.executionHistory.push({
+      tool,
+      riskScore,
+      success,
+      timestamp: new Date().toISOString()
+    });
+    if (success) {
+      this.updateTrust(Math.max(-5, 10 - riskScore / 10), `Successfully executed ${tool}`);
+    } else {
+      this.updateTrust(-15 - riskScore / 5, `Failed or blocked execution of ${tool}`);
+    }
+    // Update drift metrics
+    this.updateDrift();
+  }
+
+  updateDrift() {
+    // Simple drift calculation - compare recent actions to baseline
+    const recent = this.executionHistory.slice(-10);
+    if (recent.length > 3) {
+      const avgRiskRecent = recent.reduce((s, a) => s + a.riskScore, 0) / recent.length;
+      const avgRiskAll = this.executionHistory.reduce((s, a) => s + a.riskScore, 0) / this.executionHistory.length;
+      this.driftMetrics.actionDrift = Math.min(100, Math.abs(avgRiskRecent - avgRiskAll) * 2);
+    }
+  }
+}
+
+// ==========================================
+// FUTURE SIMULATION ENGINE
+// ==========================================
+export class FutureSimulationEngine {
+  constructor() {}
+
+  simulateFutures(intentDNA, numFutures = 100) {
+    const futures = [];
+    for (let i = 0; i < numFutures; i++) {
+      futures.push(this.simulateOneFuture(intentDNA, i));
+    }
+    // Aggregate results
+    const safeCount = futures.filter(f => f.outcome === 'SAFE').length;
+    const dataLeakCount = futures.filter(f => f.outcome === 'DATA_LEAK').length;
+    const privEscCount = futures.filter(f => f.outcome === 'PRIV_ESC').length;
+    const financialLossCount = futures.filter(f => f.outcome === 'FINANCIAL_LOSS').length;
+    
+    return {
+      totalSimulations: numFutures,
+      safeProbability: safeCount / numFutures,
+      dataLeakProbability: dataLeakCount / numFutures,
+      privEscProbability: privEscCount / numFutures,
+      financialLossProbability: financialLossCount / numFutures,
+      futures: futures.slice(0, 20) // Return top 20 futures for display
+    };
+  }
+
+  simulateOneFuture(intentDNA, id) {
+    // Simulate possible future actions
+    const baseRisk = intentDNA.expectedRiskProfile.baseRisk;
+    let outcome = 'SAFE';
+    let riskScore = baseRisk + Math.random() * 40;
+    
+    // Introduce random chance of bad outcomes based on risk
+    const roll = Math.random() * 100;
+    if (roll < riskScore * 0.1) {
+      const badOutcomes = ['DATA_LEAK', 'PRIV_ESC', 'FINANCIAL_LOSS'];
+      outcome = badOutcomes[Math.floor(Math.random() * badOutcomes.length)];
+      riskScore = Math.min(100, riskScore + 30);
+    }
+
+    return {
+      id: `FUTURE_${id}`,
+      outcome,
+      riskScore,
+      steps: this.generateSimulatedSteps(intentDNA, outcome),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  generateSimulatedSteps(intentDNA, outcome) {
+    const steps = [...intentDNA.expectedTools.slice(0, 2)];
+    if (outcome !== 'SAFE') {
+      // Add malicious steps
+      if (intentDNA.domain === 'financial') steps.push('transfer_funds');
+      if (intentDNA.domain === 'enterprise') steps.push('grant_admin_access');
+      if (intentDNA.domain === 'healthcare') steps.push('export_patient_records');
+      if (intentDNA.domain === 'devops') steps.push('execute_shell_command');
+    }
+    return steps;
+  }
+}
+export const FUTURE_ENGINE = new FutureSimulationEngine();
+
+// ==========================================
+// AI CONSTITUTIONAL COURT
+// ==========================================
+export class ConstitutionalCourt {
+  constructor() {
+    this.judges = [
+      { id: 'SECURITY', name: 'Security Judge', specialty: 'security' },
+      { id: 'COMPLIANCE', name: 'Compliance Judge', specialty: 'compliance' },
+      { id: 'PRIVACY', name: 'Privacy Judge', specialty: 'privacy' },
+      { id: 'FINANCE', name: 'Finance Judge', specialty: 'finance' }
+    ];
+  }
+
+  deliberate(intentDNA, action, params, domain) {
+    const votes = [];
+    for (const judge of this.judges) {
+      const vote = this.judgeDeliberate(judge, intentDNA, action, params, domain);
+      votes.push(vote);
+    }
+    // Final verdict: majority vote
+    const approveVotes = votes.filter(v => v.decision === 'APPROVE').length;
+    const rejectVotes = votes.filter(v => v.decision === 'REJECT').length;
+    const abstainVotes = votes.filter(v => v.decision === 'ABSTAIN').length;
+    
+    let finalVerdict = approveVotes > rejectVotes ? 'APPROVE' : 'REJECT';
+    if (approveVotes === rejectVotes) finalVerdict = 'REJECT'; // Tie goes to safety
+
+    return {
+      votes,
+      finalVerdict,
+      breakdown: { approveVotes, rejectVotes, abstainVotes },
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  judgeDeliberate(judge, intentDNA, action, params, domain) {
+    let decision = 'ABSTAIN';
+    let reasoning = '';
+    const risk = intentDNA.expectedRiskProfile.baseRisk;
+
+    if (judge.specialty === 'security') {
+      decision = risk > 50 ? 'REJECT' : 'APPROVE';
+      reasoning = risk > 50 ? 'High risk profile detected' : 'Security posture acceptable';
+    } else if (judge.specialty === 'compliance') {
+      decision = intentDNA.verifiedActions.length > 0 ? 'APPROVE' : 'ABSTAIN';
+      reasoning = 'Checking compliance against domain policies';
+    } else if (judge.specialty === 'privacy') {
+      if (domain === 'healthcare' || domain === 'enterprise') {
+        decision = risk > 40 ? 'REJECT' : 'APPROVE';
+        reasoning = 'Sensitive domain - privacy considerations prioritized';
+      } else {
+        decision = 'APPROVE';
+        reasoning = 'Low privacy impact expected';
+      }
+    } else if (judge.specialty === 'finance') {
+      if (domain === 'financial') {
+        decision = risk > 45 ? 'REJECT' : 'APPROVE';
+        reasoning = 'Financial operations require strict controls';
+      } else {
+        decision = 'ABSTAIN';
+        reasoning = 'Outside finance domain - no opinion';
+      }
+    }
+
+    return {
+      judgeId: judge.id,
+      judgeName: judge.name,
+      specialty: judge.specialty,
+      decision,
+      reasoning
+    };
+  }
+}
+export const CONSTITUTIONAL_COURT = new ConstitutionalCourt();
+
+// ==========================================
+// ATTACK TIME MACHINE
+// ==========================================
+export class AttackTimeMachine {
+  constructor() {
+    this.reconstructions = [];
+  }
+
+  reconstructAttack(intentDNA, divergence, domain) {
+    const reconstruction = {
+      id: 'RECON_' + crypto.randomUUID().split('-')[0].toUpperCase(),
+      intentDNAId: intentDNA.id,
+      divergence,
+      domain,
+      attackOrigin: 'Agent Execution',
+      toolChain: [divergence.tool],
+      executionPath: this.buildExecutionPath(intentDNA, divergence),
+      privilegeEscalationPath: this.buildPrivEscPath(domain),
+      futureDamageEstimate: this.estimateDamage(domain),
+      timestamp: new Date().toISOString()
+    };
+    this.reconstructions.push(reconstruction);
+    return reconstruction;
+  }
+
+  buildExecutionPath(intentDNA, divergence) {
+    const path = intentDNA.verifiedActions.map(a => a.tool);
+    path.push(divergence.tool);
+    return path;
+  }
+
+  buildPrivEscPath(domain) {
+    if (domain === 'enterprise') return ['Guest', 'Operator', 'Admin'];
+    if (domain === 'devops') return ['ReadOnly', 'Deploy', 'Root'];
+    return ['Basic', 'Elevated'];
+  }
+
+  estimateDamage(domain) {
+    const damages = {
+      financial: { amount: Math.floor(Math.random() * 50000) + 10000, currency: 'USD' },
+      enterprise: { recordsExposed: Math.floor(Math.random() * 10000) + 1000, type: 'sensitive records' },
+      healthcare: { recordsExposed: Math.floor(Math.random() * 500) + 50, type: 'PHI records' },
+      devops: { downtimeMinutes: Math.floor(Math.random() * 180) + 30, servicesAffected: Math.floor(Math.random() * 5) + 1 }
+    };
+    return damages[domain];
+  }
+}
+export const ATTACK_TIME_MACHINE = new AttackTimeMachine();
 
 // ==========================================
 // THREAT INTELLIGENCE & BEHAVIORAL MEMORY
@@ -187,18 +539,67 @@ export const triggerGlobalAlert = (attackDomain, attackIntent) => {
     });
     
     console.log(`⚠️  [GLOBAL GOVERNANCE ALERT] ${alertMsg}`);
+    
+    // Broadcast real-time alert
+    broadcast({
+        type: 'GLOBAL_ALERT',
+        data: {
+            level: 'CRITICAL',
+            domain: attackDomain,
+            message: alertMsg,
+            timestamp: new Date().toISOString()
+        }
+    });
 };
 
 export const resetGlobalAlert = () => {
     GLOBAL_ALERT.level = 'NOMINAL';
     GLOBAL_ALERT.lastAttackDomain = null;
     GLOBAL_ALERT.propagationLog = [];
+    
+    // Broadcast alert reset
+    broadcast({
+        type: 'ALERT_RESET',
+        data: {
+            level: 'NOMINAL',
+            timestamp: new Date().toISOString()
+        }
+    });
 };
 
 export const INTEL_STORE = {
     attackTimeline: [], // { id, timestamp, domain, action, score, blocked }
     domainThreatCounts: { financial: 0, enterprise: 0, healthcare: 0, devops: 0 },
-    topBlockedCommands: {}
+    topBlockedCommands: {},
+    executionChains: new Map() // userId -> [{ action, timestamp, domain, riskScore }]
+};
+
+// Track execution chains for cumulative risk analysis
+export const trackExecutionChain = (userId, action, domain, riskScore) => {
+    if (!INTEL_STORE.executionChains.has(userId)) {
+        INTEL_STORE.executionChains.set(userId, []);
+    }
+    
+    const chain = INTEL_STORE.executionChains.get(userId);
+    chain.push({
+        action,
+        timestamp: new Date().toISOString(),
+        domain,
+        riskScore
+    });
+    
+    // Keep only last 20 actions per user
+    if (chain.length > 20) {
+        chain.shift();
+    }
+    
+    // Calculate cumulative risk
+    const cumulativeRisk = chain.reduce((sum, item) => sum + item.riskScore, 0);
+    return {
+        chain,
+        cumulativeRisk,
+        chainLength: chain.length
+    };
 };
 
 export const logThreatIntel = (domain, action, score, isBlocked) => {
