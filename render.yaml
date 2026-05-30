@@ -3,7 +3,7 @@ services:
     name: armoriq
     env: node
     plan: starter
-    buildCommand: npm run setup
+    buildCommand: npm install && cd server && npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV
