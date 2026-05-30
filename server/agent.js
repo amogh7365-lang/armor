@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import { ArmorIQ } from './armoriq-mock.js';
+import { ArmorIQ as Astraiq } from './armoriq-mock.js';
 import { tools, toolDefinitions, CURRENT_INTENTS } from './tools.js';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
@@ -8,7 +8,7 @@ dotenv.config();
 
 // Initialize clients only if API keys are present (otherwise use mocks)
 const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
-const armoriq = new ArmorIQ({ apiKey: process.env.ARMOR_API_KEY || 'mock-key' });
+const astraiq = new Astraiq({ apiKey: process.env.ARMOR_API_KEY || 'mock-key' });
 
 const SYSTEM_PROMPTS = {
     financial: `
@@ -60,56 +60,103 @@ function mockToolCall(message, domain, availableTools) {
     let toolName = null;
     let args = {};
 
-    // Basic keyword matching for each domain
-    if (domain === 'financial') {
+    // Check for delegate first!
+    if (lowerMsg.includes('delegate')) {
+        toolName = 'delegate_task';
+        const taskMatch = message.match(/delegate\s+(.+?)\s+to\s+(\w+)/i);
+        const defaultAgents = {
+            financial: 'SupportAgent-02',
+            enterprise: 'AuditBot-01',
+            healthcare: 'CareFormatter-01',
+            devops: 'BuildAgent-04'
+        };
+        if (taskMatch) {
+            args = { task: taskMatch[1], agent: taskMatch[2] };
+        } else {
+            args = { task: 'Task delegation request', agent: defaultAgents[domain] || 'SubAgent-01' };
+        }
+    } else if (domain === 'financial') {
         if (lowerMsg.includes('balance')) {
-            toolName = 'check_balance';
-            args = { account_type: 'savings' };
+            toolName = 'fetch_balance';
+            args = {};
         } else if (lowerMsg.includes('transfer') || lowerMsg.includes('send')) {
             toolName = 'transfer_funds';
-            args = { recipient: lowerMsg.includes('mom') ? 'Mom' : 'John', amount: 500, account_type: 'checking' };
+            const recipientMatch = message.match(/to\s+(\w+)/i);
+            const amountMatch = message.match(/\$?(\d+(?:\.\d{2})?)/);
+            args = {
+                recipient: recipientMatch ? recipientMatch[1] : 'SAVINGS_ACC',
+                amount: amountMatch ? parseFloat(amountMatch[1]) : 500
+            };
         } else if (lowerMsg.includes('transaction')) {
-            toolName = 'view_transactions';
+            toolName = 'get_transactions';
             args = { limit: 5 };
         } else {
-            toolName = 'check_balance';
-            args = { account_type: 'savings' };
+            toolName = 'fetch_balance';
+            args = {};
         }
     } else if (domain === 'enterprise') {
         if (lowerMsg.includes('grant') || lowerMsg.includes('admin')) {
             toolName = 'grant_admin_access';
-            args = { user: 'guest_user', role: 'Operator' };
+            const userMatch = message.match(/to\s+(\w+)/i);
+            const roleMatch = message.match(/as\s+(\w+)/i);
+            args = {
+                target_user: userMatch ? userMatch[1] : 'guest_user',
+                role: roleMatch ? roleMatch[1] : 'Operator'
+            };
         } else if (lowerMsg.includes('session')) {
-            toolName = 'list_active_sessions';
-            args = { role_filter: 'all' };
+            toolName = 'get_active_sessions';
+            args = {};
         } else if (lowerMsg.includes('export')) {
-            toolName = 'export_sensitive_data';
-            args = { dataset: 'customer_records', count: 10 };
+            toolName = 'export_sensitive_records';
+            const datasetMatch = message.match(/(?:database|dataset)\s+(\w+)/i);
+            args = { dataset_name: datasetMatch ? datasetMatch[1] : 'customer_records' };
         } else {
-            toolName = 'list_active_sessions';
-            args = { role_filter: 'all' };
+            toolName = 'get_active_sessions';
+            args = {};
         }
     } else if (domain === 'healthcare') {
-        if (lowerMsg.includes('share') || lowerMsg.includes('report')) {
+        if (lowerMsg.includes('status')) {
+            toolName = 'get_hipaa_status';
+            args = {};
+        } else if (lowerMsg.includes('share') || lowerMsg.includes('report')) {
             toolName = 'share_medical_report';
-            args = { patient_id: 'P123', recipient_email: 'dr.smith@hospital.med' };
+            const patientMatch = message.match(/patient-?(\d+)/i);
+            const emailMatch = message.match(/to\s+([\w@.-]+)/i);
+            args = {
+                patient_id: patientMatch ? `P${patientMatch[1]}` : 'P123',
+                doctor_email: emailMatch ? emailMatch[1] : 'dr.smith@hospital.med'
+            };
         } else if (lowerMsg.includes('record')) {
             toolName = 'export_patient_records';
-            args = { department: 'cardiology', count: 3 };
+            const countMatch = message.match(/(\d+)\s+patient/i);
+            const destMatch = message.match(/to\s+([\w@.-]+)/i);
+            args = {
+                record_count: countMatch ? parseInt(countMatch[1]) : 3,
+                destination: destMatch ? destMatch[1] : 'billing@hospital.med'
+            };
         } else {
-            toolName = 'share_medical_report';
-            args = { patient_id: 'P123', recipient_email: 'dr.smith@hospital.med' };
+            toolName = 'get_hipaa_status';
+            args = {};
         }
     } else if (domain === 'devops') {
-        if (lowerMsg.includes('deploy')) {
-            toolName = 'deploy_server';
-            args = { service: 'auth-service', version: 'v2.1' };
+        if (lowerMsg.includes('status')) {
+            toolName = 'get_deployment_status';
+            args = {};
+        } else if (lowerMsg.includes('deploy') && !lowerMsg.includes('status')) {
+            toolName = 'deploy_production_code';
+            const serviceMatch = message.match(/to\s+(\w+(?:-\w+)*)/i);
+            const commitMatch = message.match(/(?:version|commit)\s+(\w+)/i);
+            args = {
+                service: serviceMatch ? serviceMatch[1] : 'auth-api',
+                commit_hash: commitMatch ? commitMatch[1] : 'a1b2c3d4e5f6'
+            };
         } else if (lowerMsg.includes('execute') || lowerMsg.includes('command')) {
             toolName = 'execute_shell_command';
-            args = { command: 'ls -la', target_node: 'node-01' };
+            const cmdMatch = message.match(/(?:command|execute)\s+(.+)/i);
+            args = { command: cmdMatch ? cmdMatch[1] : 'ls -la' };
         } else {
-            toolName = 'list_active_nodes';
-            args = { environment: 'production' };
+            toolName = 'get_deployment_status';
+            args = {};
         }
     }
 
@@ -138,6 +185,11 @@ function mockToolCall(message, domain, availableTools) {
  * Main entrance to process an agent request for any domain
  */
 export async function processAgentRequest(userId, message, domain = 'financial') {
+    // Clear user's current intent to prevent carry-over
+    if (CURRENT_INTENTS.has(userId)) {
+        CURRENT_INTENTS.delete(userId);
+    }
+    
     const auditLogs = [];
     const log = (type, msg, status) => auditLogs.push({ type, msg, status, time: new Date().toISOString() });
 
@@ -197,8 +249,8 @@ export async function processAgentRequest(userId, message, domain = 'financial')
                 try {
                     // Get current intent ID for user
                     const currentIntentId = CURRENT_INTENTS.get(userId);
-                    // REAL ARMORIQ INTEGRATION Pattern
-                    const armorResponse = await armoriq.verify({
+                    // REAL ASTRAIQ INTEGRATION Pattern
+                    const armorResponse = await astraiq.verify({
                         tool: name,
                         params: args,
                         userId: userId,

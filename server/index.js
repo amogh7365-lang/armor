@@ -1,4 +1,4 @@
-// ArmorIQ Backend Server - Built with Trae IDE
+// Astraiq Backend Server - Built with Trae IDE
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -127,13 +127,13 @@ app.post('/api/policies', (req, res) => {
     try {
         if (profile) {
             CURRENT_PROFILE.profile = profile;
-            console.log(`[ArmorIQ] Security Profile updated to: ${profile}`);
+            console.log(`[Astraiq] Security Profile updated to: ${profile}`);
         }
 
         if (domain && policies && ACTIVE_POLICIES[domain]) {
             // Merge policy configurations
             Object.assign(ACTIVE_POLICIES[domain], policies);
-            console.log(`[ArmorIQ] Policies updated for [${domain.toUpperCase()}]:`, ACTIVE_POLICIES[domain]);
+            console.log(`[Astraiq] Policies updated for [${domain.toUpperCase()}]:`, ACTIVE_POLICIES[domain]);
         }
 
         res.json({
@@ -190,7 +190,7 @@ app.post('/api/reject', async (req, res) => {
 });
 
 // Health Check
-app.get('/health', (req, res) => res.json({ status: 'active', securedBy: 'ArmorIQ' }));
+app.get('/health', (req, res) => res.json({ status: 'active', securedBy: 'Astraiq' }));
 
 // SOC Threat Intelligence Endpoint
 app.get('/api/intel', (req, res) => {
@@ -309,7 +309,7 @@ app.get('/api/export/audit', (req, res) => {
         const csvContent = csvRows.join('\n');
         
         res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=armoriq-audit-log.csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=astraiq-audit-log.csv');
         res.send(csvContent);
     } catch (error) {
         console.error('Audit export error:', error);
@@ -319,7 +319,7 @@ app.get('/api/export/audit', (req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 BankBot Shield Server running on http://127.0.0.1:${PORT}`);
-    console.log(`🔒 ArmorIQ Security Active`);
+    console.log(`🔒 Astraiq Security Active`);
     console.log(`📡 WebSocket server ready`);
     console.log(`🗺️ Threat Globe ready!`);
 });

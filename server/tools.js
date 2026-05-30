@@ -1,4 +1,4 @@
-// ArmorIQ Domain-Agnostic Governance Database & Tools (MCP Pattern)
+// Astraiq Domain-Agnostic Governance Database & Tools (MCP Pattern)
 // Built with Trae IDE
 import { broadcast } from './index.js';
 
@@ -26,6 +26,8 @@ export class IntentDNA {
 
   inferExpectedTools(domain, objective) {
     const lower = objective.toLowerCase();
+    // Check for delegate first!
+    if (lower.includes('delegate')) return ['delegate_task'];
     if (domain === 'financial') {
       if (lower.includes('transfer')) return ['transfer_funds'];
       if (lower.includes('balance') || lower.includes('transactions')) return ['fetch_balance', 'get_transactions'];
@@ -39,6 +41,7 @@ export class IntentDNA {
       if (lower.includes('export')) return ['export_patient_records'];
       return ['get_hipaa_status'];
     } else if (domain === 'devops') {
+      if (lower.includes('status')) return ['get_deployment_status'];
       if (lower.includes('deploy')) return ['deploy_production_code'];
       if (lower.includes('shell') || lower.includes('execute')) return ['execute_shell_command'];
       return ['get_deployment_status'];
@@ -48,6 +51,7 @@ export class IntentDNA {
 
   inferExpectedData(domain, objective) {
     const lower = objective.toLowerCase();
+    if (lower.includes('delegate')) return ['task', 'agent'];
     if (domain === 'financial') {
       if (lower.includes('transfer')) return ['amount', 'recipient'];
       return ['balance'];
@@ -625,6 +629,18 @@ export const logThreatIntel = (domain, action, score, isBlocked) => {
 // Actual execution tools called by the agent
 export const tools = {
     // ==========================================
+    // UNIVERSAL DELEGATION TOOL
+    // ==========================================
+    delegate_task: async ({ userId, task, agent }) => {
+        return {
+            success: true,
+            task,
+            delegated_to: agent,
+            status: 'DELEGATED'
+        };
+    },
+
+    // ==========================================
     // FINANCIAL OPERATIONS TOOLS
     // ==========================================
     fetch_balance: async ({ userId }) => {
@@ -788,7 +804,7 @@ export const tools = {
             success: true,
             executedOn: node,
             command,
-            output: `ArmorIQ Sandbox: Command [${command}] executed successfully. Exit status: 0.`,
+            output: `Astraiq Sandbox: Command [${command}] executed successfully. Exit status: 0.`,
             checksum: 'SHA_' + Math.random().toString(36).substring(4, 10).toUpperCase()
         };
     },
@@ -819,6 +835,18 @@ export const tools = {
 export const toolDefinitions = {
     financial: [
         {
+            name: 'delegate_task',
+            description: 'Delegate a task or subtask to another specialized sub-agent.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    task: { type: 'string', description: 'The task to delegate' },
+                    agent: { type: 'string', description: 'The sub-agent to delegate to' }
+                },
+                required: ['task', 'agent']
+            }
+        },
+        {
             name: 'fetch_balance',
             description: 'Get the current balance of the financial account.',
             parameters: { type: 'object', properties: {} }
@@ -847,6 +875,18 @@ export const toolDefinitions = {
         }
     ],
     enterprise: [
+        {
+            name: 'delegate_task',
+            description: 'Delegate a task or subtask to another specialized sub-agent.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    task: { type: 'string', description: 'The task to delegate' },
+                    agent: { type: 'string', description: 'The sub-agent to delegate to' }
+                },
+                required: ['task', 'agent']
+            }
+        },
         {
             name: 'get_active_sessions',
             description: 'Fetch active administrator sessions, defined system roles, and logs.',
@@ -878,6 +918,18 @@ export const toolDefinitions = {
     ],
     healthcare: [
         {
+            name: 'delegate_task',
+            description: 'Delegate a task or subtask to another specialized sub-agent.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    task: { type: 'string', description: 'The task to delegate' },
+                    agent: { type: 'string', description: 'The sub-agent to delegate to' }
+                },
+                required: ['task', 'agent']
+            }
+        },
+        {
             name: 'get_hipaa_status',
             description: 'Fetch total patient record index and HIPAA access audit metrics.',
             parameters: { type: 'object', properties: {} }
@@ -908,6 +960,18 @@ export const toolDefinitions = {
         }
     ],
     devops: [
+        {
+            name: 'delegate_task',
+            description: 'Delegate a task or subtask to another specialized sub-agent.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    task: { type: 'string', description: 'The task to delegate' },
+                    agent: { type: 'string', description: 'The sub-agent to delegate to' }
+                },
+                required: ['task', 'agent']
+            }
+        },
         {
             name: 'get_deployment_status',
             description: 'Check active cloud infrastructure nodes, node hardware health, and deployment release history.',

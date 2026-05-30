@@ -797,10 +797,10 @@ async function handleUserInput(text) {
                     </ul>
                 </div>
             `;
-        } else if (lowerText.includes('how') && lowerText.includes('armoriq')) {
+        } else if (lowerText.includes('how') && lowerText.includes('astraiq')) {
             copilotResponse = `
                 <div class="text-xs font-mono-code leading-relaxed text-on-surface/90 space-y-2">
-                    <p class="font-semibold text-secondary">How ArmorIQ Works:</p>
+                    <p class="font-semibold text-secondary">How Astraiq Works:</p>
                     <ol class="list-decimal list-inside text-[11px] text-on-surface-variant space-y-1">
                         <li><strong>Detect</strong> — Extracts intent from natural language or tool calls</li>
                         <li><strong>Reason</strong> — Calculates dynamic risk score using 8-stage pipeline</li>
@@ -815,11 +815,11 @@ async function handleUserInput(text) {
             copilotResponse = `
                 <div class="text-xs font-mono-code leading-relaxed text-on-surface/90 space-y-2">
                     <p class="font-semibold text-secondary">AI Security Copilot Ready</p>
-                    <p class="text-on-surface-variant opacity-80">I'm your ArmorIQ AI Security Copilot! Ask me things like:</p>
+                    <p class="text-on-surface-variant opacity-80">I'm your Astraiq AI Security Copilot! Ask me things like:</p>
                     <ul class="list-disc list-inside text-[11px] text-on-surface-variant space-y-1">
                         <li>"Why was that blocked?"</li>
                         <li>"What's the current risk?"</li>
-                        <li>"How does ArmorIQ work?"</li>
+                        <li>"How does Astraiq work?"</li>
                         <li>"Explain the risk score"</li>
                     </ul>
                 </div>
@@ -1522,7 +1522,7 @@ function downloadAuditLedgerCSV() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `ArmorIQ_Cryptographic_Audit_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `Astraiq_Cryptographic_Audit_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1537,7 +1537,7 @@ async function downloadThreatIntelCSV() {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `ArmorIQ_Threat_Intel_Audit_${new Date().toISOString().slice(0,10)}.csv`;
+        link.download = `Astraiq_Threat_Intel_Audit_${new Date().toISOString().slice(0,10)}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -2774,7 +2774,7 @@ function bootTerminalTyper() {
     if (!el) return;
 
     const lines = [
-        '> ARMORIQ v4.5.0-SOC booting...',
+        '> ASTRAIQ v4.5.0-SOC booting...',
         '> Mounting governance middleware...',
         '> Policy engine: ONLINE',
         '> Intent parser: ACTIVE',

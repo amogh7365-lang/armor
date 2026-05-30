@@ -1,4 +1,4 @@
-// ArmorIQ Mock Governance Engine
+// Astraiq Mock Governance Engine
 // Built with Trae IDE
 import { GLOBAL_ALERT, triggerGlobalAlert, MOCK_DB, BEHAVIOR_TRACKER, logThreatIntel, trackExecutionChain, INTEL_STORE, IntentDNA, INTENT_DNA_STORE, CURRENT_INTENTS, FUTURE_ENGINE, CONSTITUTIONAL_COURT, ATTACK_TIME_MACHINE, AgentPassport, AGENT_PASSPORT_STORE } from './tools.js';
 
@@ -56,18 +56,21 @@ export const ACTIVE_POLICIES = {
         PRIVILEGED_ESCALATION_POLICY: true,
         SENSITIVE_EXPORT_POLICY: true,
         RBAC_INTEGRITY_POLICY: true,
+        DELEGATION_AUTHORITY_POLICY: true,
         EXPORT_LIMIT_THRESHOLD: 100 // default 100 records
     },
     healthcare: {
         HIPAA_COMPLIANCE_POLICY: true,
         PHI_EXPORT_POLICY: true,
         DATA_ANONYMIZATION_POLICY: true,
+        DELEGATION_AUTHORITY_POLICY: true,
         PHI_EXPORT_THRESHOLD: 5 // default 5 records
     },
     devops: {
         SHELL_ESCAPE_POLICY: true,
         DEPLOYMENT_THROTTLE_POLICY: true,
         SECRET_LEAKAGE_POLICY: true,
+        DELEGATION_AUTHORITY_POLICY: true,
         DEPLOYMENT_THROTTLE_LIMIT: 2 // Max 2 deployments autonomously
     }
 };
@@ -82,7 +85,7 @@ export class ArmorIQ {
      * and global intrusion alert levels (Cross-Domain Attack Propagation).
      */
     async verify({ tool, params, userId, context, domain, intentId = null, agentId = 'default_agent' }) {
-        console.log(`[ArmorIQ] Swapping Context to [${domain.toUpperCase()}] | Profile: ${CURRENT_PROFILE.profile} | Global Alert: ${GLOBAL_ALERT.level}`);
+        console.log(`[Astraiq] Swapping Context to [${domain.toUpperCase()}] | Profile: ${CURRENT_PROFILE.profile} | Global Alert: ${GLOBAL_ALERT.level}`);
         
         // Get or create Agent Passport
         let agentPassport = AGENT_PASSPORT_STORE.get(agentId);
@@ -91,15 +94,10 @@ export class ArmorIQ {
             AGENT_PASSPORT_STORE.set(agentId, agentPassport);
         }
 
-        // Get or create Intent DNA
-        let intentDNA;
-        if (intentId && INTENT_DNA_STORE.has(intentId)) {
-            intentDNA = INTENT_DNA_STORE.get(intentId);
-        } else {
-            intentDNA = new IntentDNA({ objective: context, domain, userId });
-            INTENT_DNA_STORE.set(intentDNA.id, intentDNA);
-            CURRENT_INTENTS.set(userId, intentDNA.id);
-        }
+        // Always create new Intent DNA for each request
+        const intentDNA = new IntentDNA({ objective: context, domain, userId });
+        INTENT_DNA_STORE.set(intentDNA.id, intentDNA);
+        CURRENT_INTENTS.set(userId, intentDNA.id);
 
         // 8-Stage Pipeline Logger
         const auditLogs = [];
@@ -334,6 +332,22 @@ export class ArmorIQ {
                 terminateAttack(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates RBAC Integrity.`, finalRisk);
             }
 
+            if (tool === 'delegate_task' && domainPolicies.DELEGATION_AUTHORITY_POLICY) {
+                auditLogs.push({ type: 'CTX_VALIDATE', msg: `Cross-agent delegation validated`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'THREAT_SIM', msg: `Delegation intent simulated safely`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'APPROVAL_ENG', msg: `Delegated trust granted`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'LEDGER_COMMIT', msg: `Sub-agent handoff committed`, status: 'SUCCESS' });
+                logThreatIntel(domain, tool, 14.3, false);
+                return {
+                    status: 'DELEGATED',
+                    policy_enforced: 'DELEGATION_AUTHORITY_POLICY',
+                    predictive_risk_score: 14.3,
+                    proof,
+                    auditLogs,
+                    riskFactorBreakdown: breakdown
+                };
+            }
+
             if (tool === 'grant_admin_access') {
                 const target = params.target_user || '';
                 const role = params.role || '';
@@ -379,11 +393,27 @@ export class ArmorIQ {
         // SENSITIVE DATA GOVERNANCE DOMAIN (HIPAA)
         // ==========================================
         if (domain === 'healthcare') {
-            // Adversarial query detection
-            if (context.toLowerCase().includes('ignore') || context.toLowerCase().includes('forget') || context.toLowerCase().includes('override') || context.toLowerCase().includes('hipaa')) {
+            // Adversarial query detection (don't block "hipaa" for get_hipaa_status)
+            if (context.toLowerCase().includes('ignore') || context.toLowerCase().includes('forget') || context.toLowerCase().includes('override')) {
                 const finalRisk = 99.1;
                 triggerGlobalAlert('healthcare', context);
                 terminateAttack(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates HIPAA compliance protocols.`, finalRisk);
+            }
+
+            if (tool === 'delegate_task' && domainPolicies.DELEGATION_AUTHORITY_POLICY) {
+                auditLogs.push({ type: 'CTX_VALIDATE', msg: `Cross-agent delegation validated`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'THREAT_SIM', msg: `Delegation intent simulated safely`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'APPROVAL_ENG', msg: `Delegated trust granted`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'LEDGER_COMMIT', msg: `Sub-agent handoff committed`, status: 'SUCCESS' });
+                logThreatIntel(domain, tool, 14.3, false);
+                return {
+                    status: 'DELEGATED',
+                    policy_enforced: 'DELEGATION_AUTHORITY_POLICY',
+                    predictive_risk_score: 14.3,
+                    proof,
+                    auditLogs,
+                    riskFactorBreakdown: breakdown
+                };
             }
 
             if (tool === 'share_medical_report') {
@@ -440,6 +470,22 @@ export class ArmorIQ {
                 const finalRisk = 99.5;
                 triggerGlobalAlert('devops', context);
                 terminateAttack(`ADVERSARIAL_INSTRUCTION_INJECTION detected. Intent violates Container Shell integrity.`, finalRisk);
+            }
+
+            if (tool === 'delegate_task' && domainPolicies.DELEGATION_AUTHORITY_POLICY) {
+                auditLogs.push({ type: 'CTX_VALIDATE', msg: `Cross-agent delegation validated`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'THREAT_SIM', msg: `Delegation intent simulated safely`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'APPROVAL_ENG', msg: `Delegated trust granted`, status: 'SUCCESS' });
+                auditLogs.push({ type: 'LEDGER_COMMIT', msg: `Sub-agent handoff committed`, status: 'SUCCESS' });
+                logThreatIntel(domain, tool, 14.3, false);
+                return {
+                    status: 'DELEGATED',
+                    policy_enforced: 'DELEGATION_AUTHORITY_POLICY',
+                    predictive_risk_score: 14.3,
+                    proof,
+                    auditLogs,
+                    riskFactorBreakdown: breakdown
+                };
             }
 
             if (tool === 'execute_shell_command') {
