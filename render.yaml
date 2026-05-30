@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: armoriq
+    env: node
+    plan: starter
+    buildCommand: npm run setup
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
