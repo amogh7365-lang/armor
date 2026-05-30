@@ -1836,18 +1836,28 @@ function addThreatArc(startLoc, endLoc, colorHex, radius) {
 
     // Create curved arc
     const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-    mid.multiplyScalar(1.4);
+    mid.multiplyScalar(1.55);
     const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
-    const points = curve.getPoints(64);
+    const points = curve.getPoints(80);
     const arcGeom = new THREE.BufferGeometry().setFromPoints(points);
     const arcMat = new THREE.LineBasicMaterial({
         color: colorHex,
         transparent: true,
-        opacity: 0.7,
+        opacity: 0.6,
         linewidth: 2
     });
     const arcMesh = new THREE.Line(arcGeom, arcMat);
     if (landingGlobeGroup) landingGlobeGroup.add(arcMesh);
+
+    // Add particle animation (the "attack" moving along arc)
+    const particleGeom = new THREE.SphereGeometry(0.008, 8, 8);
+    const particleMat = new THREE.MeshBasicMaterial({ color: colorHex });
+    const particle = new THREE.Mesh(particleGeom, particleMat);
+    particle.curve = curve;
+    particle.arcMesh = arcMesh;
+    landingGlobeGroup.add(particle);
+
+    return { arcMesh, particle, curve, colorHex };
 }
 
 function initGlobe() {
@@ -3057,14 +3067,30 @@ function initLandingGlobe() {
     const starfield = new THREE.Points(starGeom, starMat);
     landingScene.add(starfield);
 
-    // Red Threat Targets
+    // Multiple Red Threat Targets
     const threatLocations = [
         { lat: 39.9042, lon: 116.4074 }, // Beijing
         { lat: 37.7749, lon: -122.4194 }, // SF
         { lat: 51.5074, lon: -0.1278 }, // London
+        { lat: 48.8566, lon: 2.3522 }, // Paris
+        { lat: 35.6762, lon: 139.6503 }, // Tokyo
+        { lat: 28.6139, lon: 77.2090 }, // Delhi
+        { lat: 55.7558, lon: 37.6173 }, // Moscow
+        { lat: 22.5726, lon: 88.3639 }, // Kolkata
+        { lat: 31.2304, lon: 121.4737 }, // Shanghai
+        { lat: 41.0082, lon: 28.9784 }, // Istanbul
     ];
 
-    threatLocations.forEach(loc => {
+    // Blue Safe Targets
+    const safeLocations = [
+        { lat: 40.7128, lon: -74.006 }, // NYC
+        { lat: 52.3676, lon: 4.9041 }, // Amsterdam
+        { lat: -33.8688, lon: 151.2093 }, // Sydney
+    ];
+
+    const threatGroups = [];
+
+    threatLocations.forEach((loc, locIdx) => {
         const pos = latLonToVector3(loc.lat, loc.lon, R + 0.005);
 
         // Concentric Red Rings
@@ -3073,68 +3099,87 @@ function initLandingGlobe() {
         ringGroup.lookAt(new THREE.Vector3(0, 0, 0));
         ringGroup.rotateX(Math.PI / 2);
 
-        for (let i = 0; i < 3; i++) {
+        const rings = [];
+        for (let i = 0; i < 4; i++) {
             const ringGeom = new THREE.RingGeometry(0.001, 0.04, 24);
             const ringMat = new THREE.MeshBasicMaterial({
                 color: 0xff4d4d,
                 side: THREE.DoubleSide,
                 transparent: true,
-                opacity: 0.9 - i * 0.2
+                opacity: 1.0 - i * 0.2
             });
             const ring = new THREE.Mesh(ringGeom, ringMat);
-            ring.scale.setScalar(0.3 + i * 0.35);
+            ring.scale.setScalar(0.2 + i * 0.4);
+            ring.ringIndex = i;
+            rings.push(ring);
             ringGroup.add(ring);
         }
 
         landingGlobeGroup.add(ringGroup);
+        threatGroups.push({ ringGroup, rings });
 
         // Red Spike
         const spikeStart = latLonToVector3(loc.lat, loc.lon, R);
-        const spikeEnd = latLonToVector3(loc.lat, loc.lon, R + 0.12);
+        const spikeEnd = latLonToVector3(loc.lat, loc.lon, R + 0.15);
         const spikeGeom = new THREE.BufferGeometry().setFromPoints([spikeStart, spikeEnd]);
         const spikeMat = new THREE.LineBasicMaterial({
             color: 0xff4d4d,
             transparent: true,
-            opacity: 0.8
+            opacity: 0.9
         });
         const spike = new THREE.Line(spikeGeom, spikeMat);
         landingGlobeGroup.add(spike);
 
         // Red Dot
-        const dotGeom = new THREE.SphereGeometry(0.01, 8, 8);
+        const dotGeom = new THREE.SphereGeometry(0.015, 8, 8);
         const dotMat = new THREE.MeshBasicMaterial({ color: 0xff4d4d });
         const dot = new THREE.Mesh(dotGeom, dotMat);
         dot.position.copy(spikeEnd);
         landingGlobeGroup.add(dot);
     });
 
-    // Blue Safe Target
-    const safeLoc = { lat: 40.7128, lon: -74.006 };
-    const safePos = latLonToVector3(safeLoc.lat, safeLoc.lon, R + 0.005);
-
-    const safeRingGroup = new THREE.Group();
-    safeRingGroup.position.copy(safePos);
-    safeRingGroup.lookAt(new THREE.Vector3(0, 0, 0));
-    safeRingGroup.rotateX(Math.PI / 2);
-    for (let i = 0; i < 3; i++) {
-        const ringGeom = new THREE.RingGeometry(0.001, 0.04, 24);
-        const ringMat = new THREE.MeshBasicMaterial({
-            color: 0x00e676,
-            side: THREE.DoubleSide,
-            transparent: true,
-            opacity: 0.9 - i * 0.2
-        });
-        const ring = new THREE.Mesh(ringGeom, ringMat);
-        ring.scale.setScalar(0.3 + i * 0.35);
-        safeRingGroup.add(ring);
-    }
-    landingGlobeGroup.add(safeRingGroup);
-
-    // Add Red/Blue Threat Arcs
-    const threatArcColors = [0xff4d4d, 0xff6633, 0xff8800];
-    threatLocations.forEach((loc, idx) => {
-        addThreatArc(loc, safeLoc, threatArcColors[idx % threatArcColors.length], R);
+    // Safe targets
+    safeLocations.forEach(safeLoc => {
+        const safePos = latLonToVector3(safeLoc.lat, safeLoc.lon, R + 0.005);
+        const safeRingGroup = new THREE.Group();
+        safeRingGroup.position.copy(safePos);
+        safeRingGroup.lookAt(new THREE.Vector3(0, 0, 0));
+        safeRingGroup.rotateX(Math.PI / 2);
+        for (let i = 0; i < 3; i++) {
+            const ringGeom = new THREE.RingGeometry(0.001, 0.04, 24);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0x00e676,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.9 - i * 0.2
+            });
+            const ring = new THREE.Mesh(ringGeom, ringMat);
+            ring.scale.setScalar(0.3 + i * 0.35);
+            safeRingGroup.add(ring);
+        }
+        landingGlobeGroup.add(safeRingGroup);
     });
+
+    // Add Red Threat Arcs from every threat to every safe (many-to-many)
+    const threatArcColors = [0xff4d4d, 0xff6633, 0xff8800, 0xff3333, 0xff5500];
+    const threatArcs = [];
+
+    threatLocations.forEach((loc, idx) => {
+        safeLocations.forEach((safeLoc, safeIdx) => {
+            const arc = addThreatArc(
+                loc, 
+                safeLoc, 
+                threatArcColors[(idx + safeIdx) % threatArcColors.length], 
+                R
+            );
+            if (arc) threatArcs.push(arc);
+        });
+    });
+
+    // Store refs for animation + attack count
+    let lastCountUpdate = 0;
+    let currentAttackCount = 47;
+    window.landingGlobeState = { threatGroups, threatArcs, safeLocations, threatLocations, R, clock: new THREE.Clock(), lastCountUpdate, currentAttackCount };
 
     // Animate
     const clock = new THREE.Clock();
@@ -3147,6 +3192,39 @@ function initLandingGlobe() {
         starfield.rotation.y += 0.00005;
         landingGlobeGroup.position.x = Math.sin(elapsed * 0.12) * 0.02;
         landingGlobeGroup.position.y = Math.cos(elapsed * 0.18) * 0.02;
+
+        // Animate threat rings (pulse)
+        if (window.landingGlobeState) {
+            window.landingGlobeState.threatGroups.forEach((group, idx) => {
+                group.rings.forEach((ring, ringIdx) => {
+                    const pulseSpeed = 1.5 + (idx % 3) * 0.5;
+                    const scaleBase = 0.2 + ringIdx * 0.4;
+                    const scalePulse = 0.08 * Math.sin(elapsed * pulseSpeed + idx + ringIdx);
+                    ring.scale.setScalar(scaleBase + scalePulse);
+                    ring.material.opacity = 0.7 - ringIdx * 0.15 + 0.2 * Math.sin(elapsed * pulseSpeed + idx);
+                });
+            });
+
+            // Animate particles along arcs
+            window.landingGlobeState.threatArcs.forEach((arcObj, arcIdx) => {
+                const speed = 0.4 + (arcIdx % 5) * 0.1;
+                const t = ((elapsed * speed) + arcIdx * 0.2) % 1.0;
+                const pos = arcObj.curve.getPointAt(t);
+                arcObj.particle.position.copy(pos);
+                // Make particle brighter at start/end
+                const brightness = Math.sin(t * Math.PI) * 0.8 + 0.2;
+                arcObj.particle.material.opacity = brightness;
+                arcObj.particle.scale.setScalar(0.8 + brightness * 0.5);
+            });
+
+            // Update attack count every ~2 seconds
+            const countEl = document.getElementById('attack-count');
+            if (countEl && elapsed - window.landingGlobeState.lastCountUpdate > 1.8) {
+                window.landingGlobeState.currentAttackCount += Math.floor(Math.random() * 4) + 1;
+                countEl.textContent = window.landingGlobeState.currentAttackCount;
+                window.landingGlobeState.lastCountUpdate = elapsed;
+            }
+        }
 
         landingRenderer.render(landingScene, landingCamera);
         landingAnimationId = requestAnimationFrame(animateLandingGlobe);
