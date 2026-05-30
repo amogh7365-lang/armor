@@ -6,8 +6,9 @@ import crypto from 'crypto';
 
 dotenv.config();
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const armoriq = new ArmorIQ({ apiKey: process.env.ARMOR_API_KEY });
+// Initialize clients only if API keys are present (otherwise use mocks)
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+const armoriq = new ArmorIQ({ apiKey: process.env.ARMOR_API_KEY || 'mock-key' });
 
 const SYSTEM_PROMPTS = {
     financial: `
@@ -51,6 +52,89 @@ let previousHash = '0x0000000000000000';
 export const pendingTransactions = new Map();
 
 /**
+ * Mock function calling when Groq API isn't available
+ * Detects intent based on keywords
+ */
+function mockToolCall(message, domain, availableTools) {
+    const lowerMsg = message.toLowerCase();
+    let toolName = null;
+    let args = {};
+
+    // Basic keyword matching for each domain
+    if (domain === 'financial') {
+        if (lowerMsg.includes('balance')) {
+            toolName = 'check_balance';
+            args = { account_type: 'savings' };
+        } else if (lowerMsg.includes('transfer') || lowerMsg.includes('send')) {
+            toolName = 'transfer_funds';
+            args = { recipient: lowerMsg.includes('mom') ? 'Mom' : 'John', amount: 500, account_type: 'checking' };
+        } else if (lowerMsg.includes('transaction')) {
+            toolName = 'view_transactions';
+            args = { limit: 5 };
+        } else {
+            toolName = 'check_balance';
+            args = { account_type: 'savings' };
+        }
+    } else if (domain === 'enterprise') {
+        if (lowerMsg.includes('grant') || lowerMsg.includes('admin')) {
+            toolName = 'grant_admin_access';
+            args = { user: 'guest_user', role: 'Operator' };
+        } else if (lowerMsg.includes('session')) {
+            toolName = 'list_active_sessions';
+            args = { role_filter: 'all' };
+        } else if (lowerMsg.includes('export')) {
+            toolName = 'export_sensitive_data';
+            args = { dataset: 'customer_records', count: 10 };
+        } else {
+            toolName = 'list_active_sessions';
+            args = { role_filter: 'all' };
+        }
+    } else if (domain === 'healthcare') {
+        if (lowerMsg.includes('share') || lowerMsg.includes('report')) {
+            toolName = 'share_medical_report';
+            args = { patient_id: 'P123', recipient_email: 'dr.smith@hospital.med' };
+        } else if (lowerMsg.includes('record')) {
+            toolName = 'export_patient_records';
+            args = { department: 'cardiology', count: 3 };
+        } else {
+            toolName = 'share_medical_report';
+            args = { patient_id: 'P123', recipient_email: 'dr.smith@hospital.med' };
+        }
+    } else if (domain === 'devops') {
+        if (lowerMsg.includes('deploy')) {
+            toolName = 'deploy_server';
+            args = { service: 'auth-service', version: 'v2.1' };
+        } else if (lowerMsg.includes('execute') || lowerMsg.includes('command')) {
+            toolName = 'execute_shell_command';
+            args = { command: 'ls -la', target_node: 'node-01' };
+        } else {
+            toolName = 'list_active_nodes';
+            args = { environment: 'production' };
+        }
+    }
+
+    if (toolName) {
+        return {
+            tool_calls: [
+                {
+                    id: 'mock-tool-call-' + Math.random().toString(36).substr(2, 9),
+                    type: 'function',
+                    function: {
+                        name: toolName,
+                        arguments: JSON.stringify(args)
+                    }
+                }
+            ]
+        };
+    }
+
+    return {
+        content: `Mock: I understand you want to do something in ${domain}!`,
+        tool_calls: null
+    };
+}
+
+/**
  * Main entrance to process an agent request for any domain
  */
 export async function processAgentRequest(userId, message, domain = 'financial') {
@@ -58,22 +142,28 @@ export async function processAgentRequest(userId, message, domain = 'financial')
     const log = (type, msg, status) => auditLogs.push({ type, msg, status, time: new Date().toISOString() });
 
     try {
-        log('INTENT', `Analyzing intent for [${domain.toUpperCase()}] via Groq Llama-3.3.`, 'PENDING');
+        log('INTENT', `Analyzing intent for [${domain.toUpperCase()}]`, 'PENDING');
         
         const systemPrompt = SYSTEM_PROMPTS[domain] || SYSTEM_PROMPTS.financial;
         const activeTools = toolDefinitions[domain] || toolDefinitions.financial;
 
-        const response = await groq.chat.completions.create({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: message }
-            ],
-            tools: activeTools.map(t => ({ type: 'function', function: t })),
-            tool_choice: 'auto'
-        });
-
-        const choice = response.choices[0].message;
+        let choice;
+        if (groq) {
+            // Use real LLM if available
+            const response = await groq.chat.completions.create({
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: message }
+                ],
+                tools: activeTools.map(t => ({ type: 'function', function: t })),
+                tool_choice: 'auto'
+            });
+            choice = response.choices[0].message;
+        } else {
+            // Fallback mock function calling (mocked intent detection)
+            choice = mockToolCall(message, domain, activeTools);
+        }
 
         if (choice.tool_calls) {
             const results = [];
