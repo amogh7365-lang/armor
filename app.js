@@ -1829,6 +1829,27 @@ function latLonToVector3(lat, lon, radius) {
     return new THREE.Vector3(x, y, z);
 }
 
+// Add threat arc between two lat/lon points
+function addThreatArc(startLoc, endLoc, colorHex, radius) {
+    const start = latLonToVector3(startLoc.lat, startLoc.lon, radius * 1.01);
+    const end = latLonToVector3(endLoc.lat, endLoc.lon, radius * 1.01);
+
+    // Create curved arc
+    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    mid.multiplyScalar(1.4);
+    const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+    const points = curve.getPoints(64);
+    const arcGeom = new THREE.BufferGeometry().setFromPoints(points);
+    const arcMat = new THREE.LineBasicMaterial({
+        color: colorHex,
+        transparent: true,
+        opacity: 0.7,
+        linewidth: 2
+    });
+    const arcMesh = new THREE.Line(arcGeom, arcMat);
+    if (landingGlobeGroup) landingGlobeGroup.add(arcMesh);
+}
+
 function initGlobe() {
     const container = document.getElementById('globe-container');
     const canvas = document.getElementById('globe-canvas');
@@ -2823,3 +2844,328 @@ function bootTerminalTyper() {
 
     tick();
 }
+
+// Landing Mini Globe Variables
+let landingScene, landingCamera, landingRenderer, landingGlobeGroup;
+let landingAnimationId;
+
+// Initialize Landing Mini Globe
+function initLandingGlobe() {
+    const container = document.getElementById('landing-globe-wrapper');
+    const canvas = document.getElementById('landing-globe-canvas');
+    if (!container || !canvas || landingAnimationId) return;
+
+    const width = container.clientWidth || 300;
+    const height = container.clientHeight || 200;
+
+    // Scene Setup
+    landingScene = new THREE.Scene();
+    landingScene.fog = new THREE.FogExp2('#020611', 0.035);
+    
+    // Camera Setup
+    landingCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    landingCamera.position.set(0, 0.3, 2.2);
+
+    // Renderer Setup
+    landingRenderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+    });
+    landingRenderer.setSize(width, height);
+    landingRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    landingRenderer.outputColorSpace = THREE.SRGBColorSpace;
+    landingRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    landingRenderer.toneMappingExposure = 0.9;
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x223344, 0.35);
+    landingScene.add(ambientLight);
+
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
+    sunLight.position.set(5, 3, 5);
+    landingScene.add(sunLight);
+
+    const rimLight = new THREE.DirectionalLight(0x00ffff, 0.8);
+    rimLight.position.set(-4, 2, -4);
+    landingScene.add(rimLight);
+
+    // Globe Group
+    landingGlobeGroup = new THREE.Group();
+    landingScene.add(landingGlobeGroup);
+
+    const R = 0.8;
+
+    // Layer 1: Globe Core Base with Procedural Texture Fallback
+    const coreGeom = new THREE.SphereGeometry(R, 64, 64);
+    const fallbackCanvas = document.createElement('canvas');
+    fallbackCanvas.width = 1024;
+    fallbackCanvas.height = 512;
+    const fctx = fallbackCanvas.getContext('2d');
+    fctx.fillStyle = '#061124';
+    fctx.fillRect(0, 0, 1024, 512);
+    fctx.fillStyle = '#1e382b';
+    const scaleX = 1024 / 360;
+    const scaleY = 512 / 180;
+    
+    fctx.beginPath();
+    fctx.moveTo(145 * scaleX, 60 * scaleY);
+    fctx.bezierCurveTo(160 * scaleX, 20 * scaleY, 260 * scaleX, 20 * scaleY, 280 * scaleX, 25 * scaleY);
+    fctx.lineTo(290 * scaleX, 45 * scaleY);
+    fctx.lineTo(275 * scaleX, 75 * scaleY);
+    fctx.lineTo(240 * scaleX, 85 * scaleY);
+    fctx.lineTo(220 * scaleX, 75 * scaleY);
+    fctx.lineTo(225 * scaleX, 95 * scaleY);
+    fctx.lineTo(200 * scaleX, 130 * scaleY);
+    fctx.lineTo(170 * scaleX, 120 * scaleY);
+    fctx.lineTo(165 * scaleX, 80 * scaleY);
+    fctx.closePath();
+    fctx.fill();
+
+    fctx.fillStyle = '#223d2e';
+    fctx.beginPath();
+    fctx.moveTo(35 * scaleX, 30 * scaleY);
+    fctx.lineTo(110 * scaleX, 30 * scaleY);
+    fctx.lineTo(125 * scaleX, 45 * scaleY);
+    fctx.lineTo(110 * scaleX, 65 * scaleY);
+    fctx.lineTo(95 * scaleX, 85 * scaleY);
+    fctx.lineTo(82 * scaleX, 85 * scaleY);
+    fctx.closePath();
+    fctx.fill();
+
+    fctx.beginPath();
+    fctx.moveTo(85 * scaleX, 85 * scaleY);
+    fctx.lineTo(105 * scaleX, 95 * scaleY);
+    fctx.lineTo(115 * scaleX, 110 * scaleY);
+    fctx.lineTo(100 * scaleX, 145 * scaleY);
+    fctx.lineTo(90 * scaleX, 125 * scaleY);
+    fctx.closePath();
+    fctx.fill();
+
+    fctx.beginPath();
+    fctx.moveTo(275 * scaleX, 115 * scaleY);
+    fctx.lineTo(295 * scaleX, 118 * scaleY);
+    fctx.lineTo(290 * scaleX, 135 * scaleY);
+    fctx.lineTo(270 * scaleX, 130 * scaleY);
+    fctx.closePath();
+    fctx.fill();
+    
+    const fallbackTexture = new THREE.CanvasTexture(fallbackCanvas);
+    const coreMat = new THREE.MeshPhysicalMaterial({
+        map: fallbackTexture,
+        bumpScale: 0.035,
+        roughness: 0.85,
+        metalness: 0.05,
+        clearcoat: 0.18,
+        clearcoatRoughness: 0.8,
+        emissive: new THREE.Color(0x112208),
+        emissiveIntensity: 0.3
+    });
+    const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+    landingGlobeGroup.add(coreMesh);
+
+    // Load Real Textures
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.crossOrigin = 'anonymous';
+    textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg', (loadedTexture) => {
+        coreMat.map = loadedTexture;
+        coreMat.needsUpdate = true;
+    });
+    textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png', (loadedTexture) => {
+        coreMat.bumpMap = loadedTexture;
+        coreMat.needsUpdate = true;
+    });
+    textureLoader.load('https://unpkg.com/three-globe/example/img/earth-night.jpg', (loadedTexture) => {
+        coreMat.emissiveMap = loadedTexture;
+        coreMat.emissive = new THREE.Color(0x223311);
+        coreMat.emissiveIntensity = 0.6;
+        coreMat.needsUpdate = true;
+    });
+    textureLoader.load('https://threejs.org/examples/textures/planets/earth_specular_2048.jpg', (loadedTexture) => {
+        coreMat.roughnessMap = loadedTexture;
+        coreMat.needsUpdate = true;
+    });
+
+    // Layer 2: Clouds
+    const cloudGeom = new THREE.SphereGeometry(R * 1.008, 64, 64);
+    const cloudMat = new THREE.MeshStandardMaterial({
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false
+    });
+    const cloudsMesh = new THREE.Mesh(cloudGeom, cloudMat);
+    landingGlobeGroup.add(cloudsMesh);
+    textureLoader.load('https://unpkg.com/three-globe/example/img/earth-clouds.png', (loadedTexture) => {
+        cloudMat.map = loadedTexture;
+        cloudMat.opacity = 0.22;
+        cloudMat.needsUpdate = true;
+    });
+
+    // Layer 3: Blue Grid
+    const gridGeom = new THREE.SphereGeometry(R * 1.005, 36, 36);
+    const gridMat = new THREE.MeshBasicMaterial({
+        color: '#0088ff',
+        wireframe: true,
+        transparent: true,
+        opacity: 0.08
+    });
+    const gridMesh = new THREE.Mesh(gridGeom, gridMat);
+    landingGlobeGroup.add(gridMesh);
+
+    // Layer 4: Volumetric Atmospheric Glow
+    const atmosGeom = new THREE.SphereGeometry(R * 1.12, 64, 64);
+    const atmosMat = new THREE.ShaderMaterial({
+        vertexShader: `
+            varying vec3 vNormal;
+            void main() {
+                vNormal = normalize(normalMatrix * normal);
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vNormal;
+            void main() {
+                float intensity = pow(max(0.0, 0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0))), 4.0);
+                gl_FragColor = vec4(0.0, 0.9, 1.0, 1.0) * intensity;
+            }
+        `,
+        blending: THREE.AdditiveBlending,
+        side: THREE.BackSide,
+        transparent: true
+    });
+    const atmosMesh = new THREE.Mesh(atmosGeom, atmosMat);
+    landingScene.add(atmosMesh);
+
+    // Layer 5: Starfield
+    const starGeom = new THREE.BufferGeometry();
+    const starVertices = [];
+    for (let i = 0; i < 6000; i++) {
+        const x = (Math.random() - 0.5) * 300;
+        const y = (Math.random() - 0.5) * 300;
+        const z = (Math.random() - 0.5) * 300;
+        starVertices.push(x, y, z);
+    }
+    starGeom.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+    const starMat = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.08,
+        transparent: true,
+        opacity: 0.8,
+        sizeAttenuation: true
+    });
+    const starfield = new THREE.Points(starGeom, starMat);
+    landingScene.add(starfield);
+
+    // Red Threat Targets
+    const threatLocations = [
+        { lat: 39.9042, lon: 116.4074 }, // Beijing
+        { lat: 37.7749, lon: -122.4194 }, // SF
+        { lat: 51.5074, lon: -0.1278 }, // London
+    ];
+
+    threatLocations.forEach(loc => {
+        const pos = latLonToVector3(loc.lat, loc.lon, R + 0.005);
+
+        // Concentric Red Rings
+        const ringGroup = new THREE.Group();
+        ringGroup.position.copy(pos);
+        ringGroup.lookAt(new THREE.Vector3(0, 0, 0));
+        ringGroup.rotateX(Math.PI / 2);
+
+        for (let i = 0; i < 3; i++) {
+            const ringGeom = new THREE.RingGeometry(0.001, 0.04, 24);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0xff4d4d,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.9 - i * 0.2
+            });
+            const ring = new THREE.Mesh(ringGeom, ringMat);
+            ring.scale.setScalar(0.3 + i * 0.35);
+            ringGroup.add(ring);
+        }
+
+        landingGlobeGroup.add(ringGroup);
+
+        // Red Spike
+        const spikeStart = latLonToVector3(loc.lat, loc.lon, R);
+        const spikeEnd = latLonToVector3(loc.lat, loc.lon, R + 0.12);
+        const spikeGeom = new THREE.BufferGeometry().setFromPoints([spikeStart, spikeEnd]);
+        const spikeMat = new THREE.LineBasicMaterial({
+            color: 0xff4d4d,
+            transparent: true,
+            opacity: 0.8
+        });
+        const spike = new THREE.Line(spikeGeom, spikeMat);
+        landingGlobeGroup.add(spike);
+
+        // Red Dot
+        const dotGeom = new THREE.SphereGeometry(0.01, 8, 8);
+        const dotMat = new THREE.MeshBasicMaterial({ color: 0xff4d4d });
+        const dot = new THREE.Mesh(dotGeom, dotMat);
+        dot.position.copy(spikeEnd);
+        landingGlobeGroup.add(dot);
+    });
+
+    // Blue Safe Target
+    const safeLoc = { lat: 40.7128, lon: -74.006 };
+    const safePos = latLonToVector3(safeLoc.lat, safeLoc.lon, R + 0.005);
+
+    const safeRingGroup = new THREE.Group();
+    safeRingGroup.position.copy(safePos);
+    safeRingGroup.lookAt(new THREE.Vector3(0, 0, 0));
+    safeRingGroup.rotateX(Math.PI / 2);
+    for (let i = 0; i < 3; i++) {
+        const ringGeom = new THREE.RingGeometry(0.001, 0.04, 24);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: 0x00e676,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.9 - i * 0.2
+        });
+        const ring = new THREE.Mesh(ringGeom, ringMat);
+        ring.scale.setScalar(0.3 + i * 0.35);
+        safeRingGroup.add(ring);
+    }
+    landingGlobeGroup.add(safeRingGroup);
+
+    // Add Red/Blue Threat Arcs
+    const threatArcColors = [0xff4d4d, 0xff6633, 0xff8800];
+    threatLocations.forEach((loc, idx) => {
+        addThreatArc(loc, safeLoc, threatArcColors[idx % threatArcColors.length], R);
+    });
+
+    // Animate
+    const clock = new THREE.Clock();
+    function animateLandingGlobe() {
+        const elapsed = clock.getElapsedTime();
+
+        coreMesh.rotation.y += 0.0006;
+        if (cloudsMesh) cloudsMesh.rotation.y += 0.0008;
+        gridMesh.rotation.y += 0.0002;
+        starfield.rotation.y += 0.00005;
+        landingGlobeGroup.position.x = Math.sin(elapsed * 0.12) * 0.02;
+        landingGlobeGroup.position.y = Math.cos(elapsed * 0.18) * 0.02;
+
+        landingRenderer.render(landingScene, landingCamera);
+        landingAnimationId = requestAnimationFrame(animateLandingGlobe);
+    }
+
+    animateLandingGlobe();
+
+    // Resize
+    window.addEventListener('resize', () => {
+        if (!container) return;
+        const w = container.clientWidth || 300;
+        const h = container.clientHeight || 200;
+        landingCamera.aspect = w / h;
+        landingCamera.updateProjectionMatrix();
+        landingRenderer.setSize(w, h);
+    });
+}
+
+// Initialize landing globe when DOM loads
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initLandingGlobe, 100);
+});
